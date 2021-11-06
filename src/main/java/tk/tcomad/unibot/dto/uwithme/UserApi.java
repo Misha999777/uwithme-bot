@@ -38,5 +38,4 @@ public class UserApi implements BotData {
     public String getData() {
         return this.email;
     }
-
 }

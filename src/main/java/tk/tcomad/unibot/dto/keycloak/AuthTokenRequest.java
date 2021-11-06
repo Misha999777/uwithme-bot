@@ -13,5 +13,4 @@ public class AuthTokenRequest {
     private String redirect_uri;
     private String client_id;
     private String grant_type;
-
 }

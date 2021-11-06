@@ -35,7 +35,6 @@ public class BotEndpoint {
     @Value("${user.login.redirect.uri}")
     private String redirectUri;
 
-
     private final BotUserRepository botUserRepository;
     private final TelegramBot telegramBot;
     private final KeycloakClient keycloakClient;

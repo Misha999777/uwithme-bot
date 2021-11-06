@@ -46,11 +46,10 @@ public class BotEndpoint {
         if (botUserRepository.existsById(Long.parseLong(state))) {
             botUserRepository.deleteById(Long.parseLong(state));
             httpServletResponse.setHeader("Location", constructLogoutUri(state));
-            httpServletResponse.setStatus(302);
         } else {
             httpServletResponse.setHeader("Location", constructLoginUri(state));
-            httpServletResponse.setStatus(302);
         }
+        httpServletResponse.setStatus(302);
     }
 
     @GetMapping("/token")
@@ -61,11 +60,11 @@ public class BotEndpoint {
             var uWithMeUser = studentsClient.getUser(user.getSub());
             Objects.requireNonNull(uWithMeUser);
             Objects.requireNonNull(uWithMeUser.getStudyGroupId());
-            var botUser = new BotUser(Long.parseLong(state), user.getSub(), uWithMeUser.getStudyGroupId());
+            var botUser = new BotUser(Long.parseLong(state), uWithMeUser.getStudyGroupId());
             botUserRepository.save(botUser);
             telegramBot.onLoginComplete(Long.parseLong(state), user.getName());
         } catch (Exception ignored) {
-            var botUser = new BotUser(Long.parseLong(state), user.getSub(), null);
+            var botUser = new BotUser(Long.parseLong(state), null);
             botUserRepository.save(botUser);
             telegramBot.onLoginFail(Long.parseLong(state));
         }

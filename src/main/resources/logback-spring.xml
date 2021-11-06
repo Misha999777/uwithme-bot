@@ -1,0 +1,28 @@
+<configuration>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{"yyyy-MM-dd' 'HH:mm:ss"} [%thread] %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <springProperty scope="context" name="log" source="app.log" defaultValue="log/unibot.log"/>
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${log}</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d{"yyyy-MM-dd' 'HH:mm:ss"} [%thread] %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.telegram.abilitybots.api" level="ERROR"/>
+
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE"/>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="ASYNC"/>
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

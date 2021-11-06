@@ -1,0 +1,19 @@
+{
+  "properties": [
+    {
+      "name": "bot.creatorId",
+      "type": "java.lang.String",
+      "description": "Telegram user id of the admin."
+    },
+    {
+      "name": "bot.key",
+      "type": "java.lang.String",
+      "description": "Bot API key of the bot."
+    },
+    {
+      "name": "bot.name",
+      "type": "java.lang.String",
+      "description": "Username of the bot."
+    }
+  ]
+}

@@ -84,7 +84,7 @@ public class BotEndpoint {
     }
 
     @GetMapping("/token")
-    public ModelAndView login(@RequestParam String state, @RequestParam String code, HttpServletResponse response) {
+    public ModelAndView token(@RequestParam String state, @RequestParam String code, HttpServletResponse response) {
         var session = loginSessionRepository.findById(state).orElseThrow();
 
         var token = keycloakClient.getToken(new AuthTokenRequest(code,
@@ -102,13 +102,6 @@ public class BotEndpoint {
 
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("login.html");
-        return modelAndView;
-    }
-
-    @GetMapping("/close")
-    public ModelAndView logout() {
-        ModelAndView modelAndView = new ModelAndView();
-        modelAndView.setViewName("close.html");
         return modelAndView;
     }
 
@@ -137,8 +130,15 @@ public class BotEndpoint {
         }
     }
 
+    @GetMapping("/close")
+    public ModelAndView close() {
+        ModelAndView modelAndView = new ModelAndView();
+        modelAndView.setViewName("close.html");
+        return modelAndView;
+    }
+
     @SneakyThrows
-    public void checkAuth(@RequestBody Map<String, String> request) {
+    private void checkAuth(@RequestBody Map<String, String> request) {
         String hash = request.get("hash");
         request.remove("hash");
 

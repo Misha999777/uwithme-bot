@@ -46,6 +46,7 @@ class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and().cors().and().csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/**").permitAll();
+                .antMatchers("/**").permitAll()
+                .antMatchers("/complete").authenticated();
     }
 }

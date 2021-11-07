@@ -32,12 +32,12 @@ import org.telegram.abilitybots.api.db.DBContext;
 import org.telegram.abilitybots.api.objects.Ability;
 import org.telegram.abilitybots.api.objects.Flag;
 import org.telegram.abilitybots.api.objects.Reply;
-import org.telegram.abilitybots.api.sender.SilentSender;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.LoginUrl;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -90,11 +90,6 @@ public class TelegramBot extends AbilityBot {
     @Override
     public int creatorId() {
         return creatorId;
-    }
-
-    @SuppressWarnings("unused")
-    public void setSender(SilentSender silentSender) {
-        silent = silentSender;
     }
 
     @SuppressWarnings("unused")
@@ -225,7 +220,7 @@ public class TelegramBot extends AbilityBot {
             List<List<InlineKeyboardButton>> keyboard =
                     List.of(List.of(new InlineKeyboardButton()
                                             .setText(AUTHORIZE_BUTTON_NAME)
-                                            .setUrl(redirectUri + "/login?state=" + chatId)));
+                                            .setLoginUrl(new LoginUrl().setUrl(redirectUri + "/login"))));
             InlineKeyboardMarkup markup = new InlineKeyboardMarkup().setKeyboard(keyboard);
 
             sendMessageWithMarkup(chatId, "Пожалуйста, авторизируйтесь", markup);

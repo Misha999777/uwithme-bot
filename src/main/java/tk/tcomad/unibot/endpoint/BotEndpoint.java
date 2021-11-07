@@ -3,73 +3,161 @@ package tk.tcomad.unibot.endpoint;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 import static org.springframework.cloud.openfeign.security.OAuth2FeignRequestInterceptor.BEARER;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.transaction.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import org.keycloak.KeycloakSecurityContext;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
 import tk.tcomad.unibot.client.EducationAppClient;
 import tk.tcomad.unibot.client.KeycloakClient;
 import tk.tcomad.unibot.dto.keycloak.AuthTokenRequest;
 import tk.tcomad.unibot.entity.BotUser;
+import tk.tcomad.unibot.entity.LoginSession;
 import tk.tcomad.unibot.repository.BotUserRepository;
+import tk.tcomad.unibot.repository.LoginSessionRepository;
 import tk.tcomad.unibot.telegram.TelegramBot;
 
 @Controller
 @RequiredArgsConstructor
 public class BotEndpoint {
 
-    private static final String GRANT = "authorization_code";
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
     @Value("${spring.security.oauth2.client.provider.keycloak.authorization-uri}")
     private String authUri;
     @Value("${user.logout.uri}")
     private String logoutUri;
-    @Value("${user.login.resource}")
+    @Value("${keycloak.resource}")
     private String client;
     @Value("${user.login.redirect.uri}")
     private String redirectUri;
+    @Value("${bot.key}")
+    private String key;
+    @Value("${keycloak.credentials.secret}")
+    private String clientSecret;
 
     private final BotUserRepository botUserRepository;
     private final TelegramBot telegramBot;
     private final KeycloakClient keycloakClient;
     private final EducationAppClient studentsClient;
+    private final LoginSessionRepository loginSessionRepository;
 
     @GetMapping("/login")
-    public void login(HttpServletResponse httpServletResponse, @RequestParam String state) {
-        if (botUserRepository.existsById(Long.parseLong(state))) {
-            botUserRepository.deleteById(Long.parseLong(state));
-            httpServletResponse.setHeader("Location", constructLogoutUri(state));
-        } else {
-            httpServletResponse.setHeader("Location", constructLoginUri(state));
+    @Transactional
+    public void login(HttpServletResponse httpServletResponse, @RequestParam Map<String, String> request) {
+        if (Objects.nonNull(request.get("state")) && loginSessionRepository.existsById(request.get("state"))) {
+            httpServletResponse.setHeader("Location", constructLoginUri(request.get("state")));
+        } else  {
+            checkAuth(request);
+
+            var stateToken = UUID.randomUUID().toString();
+            var loginSession = new LoginSession(request.get("id"),
+                                                request.get("username"),
+                                                request.get("photo_url"),
+                                                stateToken,
+                                                null);
+            loginSessionRepository.deleteAllByChatId(request.get("id"));
+            loginSessionRepository.save(loginSession);
+            httpServletResponse.setHeader("Location", constructLogoutUri(stateToken));
         }
         httpServletResponse.setStatus(302);
     }
 
     @GetMapping("/token")
-    public ModelAndView login(@RequestParam String state, @RequestParam String code) {
-        var token = keycloakClient.getToken(new AuthTokenRequest(code, redirectUri + "/token", client, GRANT));
+    public ModelAndView login(@RequestParam String state, @RequestParam String code, HttpServletResponse response) {
+        var session = loginSessionRepository.findById(state).orElseThrow();
+
+        var token = keycloakClient.getToken(new AuthTokenRequest(code,
+                                                                 redirectUri + "/token",
+                                                                 client,
+                                                                 "authorization_code",
+                                                                 clientSecret));
         var user = keycloakClient.getUser(BEARER + SPACE + token.getAccess_token());
-        try {
-            var uWithMeUser = studentsClient.getUser(user.getSub());
-            Objects.requireNonNull(uWithMeUser);
-            Objects.requireNonNull(uWithMeUser.getStudyGroupId());
-            var botUser = new BotUser(Long.parseLong(state), uWithMeUser.getStudyGroupId());
-            botUserRepository.save(botUser);
-            telegramBot.onLoginComplete(Long.parseLong(state), user.getName());
-        } catch (Exception ignored) {
-            var botUser = new BotUser(Long.parseLong(state), null);
-            botUserRepository.save(botUser);
-            telegramBot.onLoginFail(Long.parseLong(state));
-        }
+        session.setSub(user.getSub());
+        loginSessionRepository.save(session);
+
+        response.addCookie(new Cookie("photo_url", session.getAvatarUrl()));
+        response.addCookie(new Cookie("username", session.getUsername()));
+        response.addCookie(new Cookie("authToken", token.getAccess_token()));
+
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("login.html");
         return modelAndView;
+    }
+
+    @GetMapping("/close")
+    public ModelAndView logout() {
+        ModelAndView modelAndView = new ModelAndView();
+        modelAndView.setViewName("close.html");
+        return modelAndView;
+    }
+
+    @GetMapping("/complete")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void complete(HttpServletRequest request) {
+        var context = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
+        var subject = context.getToken().getSubject();
+        var session = loginSessionRepository.findLoginSessionBySub(subject);
+
+        Objects.requireNonNull(session);
+
+        try {
+            var educationAppUser = studentsClient.getUser(subject);
+
+            Objects.requireNonNull(educationAppUser);
+            Objects.requireNonNull(educationAppUser.getStudyGroupId());
+
+            var botUser = new BotUser(Long.parseLong(session.getChatId()), educationAppUser.getStudyGroupId());
+            botUserRepository.save(botUser);
+            loginSessionRepository.delete(session);
+            telegramBot.onLoginComplete(Long.parseLong(session.getChatId()), educationAppUser.getFirstName());
+        } catch (Exception ignored) {
+            loginSessionRepository.delete(session);
+            telegramBot.onLoginFail(Long.parseLong(session.getChatId()));
+        }
+    }
+
+    @SneakyThrows
+    public void checkAuth(@RequestBody Map<String, String> request) {
+        String hash = request.get("hash");
+        request.remove("hash");
+
+        String str = request.entrySet().stream()
+                            .sorted((a, b) -> a.getKey().compareToIgnoreCase(b.getKey()))
+                            .map(kvp -> kvp.getKey() + "=" + kvp.getValue())
+                            .collect(Collectors.joining(System.lineSeparator()));
+
+        var spec = new SecretKeySpec(MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)),
+                                     "HmacSHA256");
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(spec);
+
+        var result = mac.doFinal(str.getBytes(StandardCharsets.UTF_8));
+        String resultStr = bytesToHex(result);
+
+        if (hash.compareToIgnoreCase(resultStr) != 0) {
+            throw new RuntimeException();
+        }
     }
 
     private String constructLoginUri(String state) {
@@ -94,6 +182,16 @@ public class BotEndpoint {
                                   .append("&state=")
                                   .append(state)
                                   .toString();
+    }
+
+    public static String bytesToHex(byte[] bytes) {
+        var hexChars = new char[bytes.length * 2];
+        for (var j = 0; j < bytes.length; j++) {
+            var v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 
 }

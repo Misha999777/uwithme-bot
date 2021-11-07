@@ -11,13 +11,13 @@ import tk.tcomad.unibot.dto.keycloak.KeycloakUserApi;
 import tk.tcomad.unibot.dto.keycloak.TokenResponse;
 
 @FeignClient(name = "KeycloakClient",
-        url = "${keycloak.auth-server-url}",
+        url = "${keycloak.auth-server-url}/realms/${keycloak.realm}",
         configuration = KeycloakClientConfig.class)
 public interface KeycloakClient {
 
-    @PostMapping(value = "/realms/tCoMaD/protocol/openid-connect/token", consumes = "application/x-www-form-urlencoded")
+    @PostMapping(value = "/protocol/openid-connect/token", consumes = "application/x-www-form-urlencoded")
     TokenResponse getToken(@RequestBody AuthTokenRequest request);
 
-    @GetMapping("/realms/tCoMaD/protocol/openid-connect/userinfo")
+    @GetMapping("/protocol/openid-connect/userinfo")
     KeycloakUserApi getUser(@RequestHeader("authorization") String token);
 }

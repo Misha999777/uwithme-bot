@@ -78,7 +78,7 @@ public class BotEndpoint {
                                                 null);
             loginSessionRepository.deleteAllByChatId(request.get("id"));
             loginSessionRepository.save(loginSession);
-            httpServletResponse.setHeader("Location", constructLogoutUri(stateToken));
+            httpServletResponse.setHeader("Location", constructLogoutUri(stateToken, "/login"));
         }
         httpServletResponse.setStatus(302);
     }
@@ -131,33 +131,15 @@ public class BotEndpoint {
     }
 
     @GetMapping("/close")
-    public ModelAndView close() {
+    public ModelAndView close(@RequestParam(required = false) String state,
+                              HttpServletResponse httpServletResponse) {
+        if (!Objects.equals(state, "close")) {
+            httpServletResponse.setHeader("Location", constructLogoutUri("close", "/close"));
+            httpServletResponse.setStatus(302);
+        }
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("close.html");
         return modelAndView;
-    }
-
-    @SneakyThrows
-    private void checkAuth(@RequestBody Map<String, String> request) {
-        String hash = request.get("hash");
-        request.remove("hash");
-
-        String str = request.entrySet().stream()
-                            .sorted((a, b) -> a.getKey().compareToIgnoreCase(b.getKey()))
-                            .map(kvp -> kvp.getKey() + "=" + kvp.getValue())
-                            .collect(Collectors.joining(System.lineSeparator()));
-
-        var spec = new SecretKeySpec(MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)),
-                                     "HmacSHA256");
-        Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(spec);
-
-        var result = mac.doFinal(str.getBytes(StandardCharsets.UTF_8));
-        String resultStr = bytesToHex(result);
-
-        if (hash.compareToIgnoreCase(resultStr) != 0) {
-            throw new RuntimeException();
-        }
     }
 
     private String constructLoginUri(String state) {
@@ -174,14 +156,37 @@ public class BotEndpoint {
                                   .toString();
     }
 
-    private String constructLogoutUri(String state) {
+    private String constructLogoutUri(String state, String path) {
         return new StringBuilder().append(logoutUri)
                                   .append("?redirect_uri=")
                                   .append(redirectUri)
-                                  .append("/login")
+                                  .append(path)
                                   .append("&state=")
                                   .append(state)
                                   .toString();
+    }
+
+    @SneakyThrows
+    private void checkAuth(@RequestBody Map<String, String> request) {
+        String hash = request.get("hash");
+        request.remove("hash");
+
+        String str = request.entrySet().stream()
+                            .sorted((a, b) -> a.getKey().compareToIgnoreCase(b.getKey()))
+                            .map(kvp -> kvp.getKey() + "=" + kvp.getValue())
+                            .collect(Collectors.joining("\n"));
+
+        var spec = new SecretKeySpec(MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8)),
+                                     "HmacSHA256");
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(spec);
+
+        var result = mac.doFinal(str.getBytes(StandardCharsets.UTF_8));
+        String resultStr = bytesToHex(result);
+
+        if (hash.compareToIgnoreCase(resultStr) != 0) {
+            throw new RuntimeException();
+        }
     }
 
     public static String bytesToHex(byte[] bytes) {

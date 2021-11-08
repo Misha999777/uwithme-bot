@@ -66,7 +66,7 @@
         xmlHttp.setRequestHeader("Authorization", "Bearer " + getCookie("authToken"))
         xmlHttp.send(null);
         deleteAllCookies();
-        window.location.href = '/close?state=close';
+        window.location.href = '/close';
     }
 
     document.getElementById('user_image').src = getCookie("photo_url");

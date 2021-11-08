@@ -45,8 +45,6 @@ public class BotEndpoint {
 
     @Value("${spring.security.oauth2.client.provider.keycloak.authorization-uri}")
     private String authUri;
-    @Value("${user.logout.uri}")
-    private String logoutUri;
     @Value("${keycloak.resource}")
     private String client;
     @Value("${user.login.redirect.uri}")
@@ -65,21 +63,16 @@ public class BotEndpoint {
     @GetMapping("/login")
     @Transactional
     public void login(HttpServletResponse httpServletResponse, @RequestParam Map<String, String> request) {
-        if (Objects.nonNull(request.get("state")) && loginSessionRepository.existsById(request.get("state"))) {
-            httpServletResponse.setHeader("Location", constructLoginUri(request.get("state")));
-        } else  {
-            checkAuth(request);
+        checkAuth(request);
+        var loginSession = loginSessionRepository.findLoginSessionByChatId(request.get("id"))
+                                                 .orElse(new LoginSession(request.get("id"),
+                                                                          request.get("username"),
+                                                                          request.get("photo_url"),
+                                                                          UUID.randomUUID().toString(),
+                                                                          null));
+        loginSessionRepository.save(loginSession);
+        httpServletResponse.setHeader("Location", constructLoginUri(loginSession.getStateToken()));
 
-            var stateToken = UUID.randomUUID().toString();
-            var loginSession = new LoginSession(request.get("id"),
-                                                request.get("username"),
-                                                request.get("photo_url"),
-                                                stateToken,
-                                                null);
-            loginSessionRepository.deleteAllByChatId(request.get("id"));
-            loginSessionRepository.save(loginSession);
-            httpServletResponse.setHeader("Location", constructLogoutUri(stateToken, "/login"));
-        }
         httpServletResponse.setStatus(302);
     }
 
@@ -131,12 +124,7 @@ public class BotEndpoint {
     }
 
     @GetMapping("/close")
-    public ModelAndView close(@RequestParam(required = false) String state,
-                              HttpServletResponse httpServletResponse) {
-        if (!Objects.equals(state, "close")) {
-            httpServletResponse.setHeader("Location", constructLogoutUri("close", "/close"));
-            httpServletResponse.setStatus(302);
-        }
+    public ModelAndView close() {
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("close.html");
         return modelAndView;
@@ -151,16 +139,6 @@ public class BotEndpoint {
                                   .append("/token")
                                   .append("&response_type=code")
                                   .append("&scope=openid")
-                                  .append("&state=")
-                                  .append(state)
-                                  .toString();
-    }
-
-    private String constructLogoutUri(String state, String path) {
-        return new StringBuilder().append(logoutUri)
-                                  .append("?redirect_uri=")
-                                  .append(redirectUri)
-                                  .append(path)
                                   .append("&state=")
                                   .append(state)
                                   .toString();

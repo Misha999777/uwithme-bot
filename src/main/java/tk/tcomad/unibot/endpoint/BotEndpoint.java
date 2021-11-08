@@ -31,7 +31,6 @@ import org.springframework.web.servlet.ModelAndView;
 import tk.tcomad.unibot.client.EducationAppClient;
 import tk.tcomad.unibot.client.KeycloakClient;
 import tk.tcomad.unibot.dto.keycloak.AuthTokenRequest;
-import tk.tcomad.unibot.dto.keycloak.LogoutRequest;
 import tk.tcomad.unibot.entity.BotUser;
 import tk.tcomad.unibot.entity.LoginSession;
 import tk.tcomad.unibot.repository.BotUserRepository;
@@ -89,10 +88,6 @@ public class BotEndpoint {
 
         var user = keycloakClient.getUser(BEARER + SPACE + token.getAccess_token());
 
-        keycloakClient.logoutUser(BEARER + SPACE + token.getAccess_token(),
-                                  new LogoutRequest(token.getRefresh_token(),
-                                                    client,
-                                                    clientSecret));
         session.setSub(user.getSub());
         loginSessionRepository.save(session);
 

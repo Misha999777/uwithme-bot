@@ -125,7 +125,7 @@ public class BotEndpoint {
             Objects.requireNonNull(educationAppUser);
             Objects.requireNonNull(educationAppUser.getStudyGroupId());
 
-            var botUser = new BotUser(Long.parseLong(session.getChatId()), educationAppUser.getStudyGroupId());
+            var botUser = new BotUser(Long.parseLong(session.getChatId()), educationAppUser.getStudyGroupId(), subject);
             botUserRepository.save(botUser);
             loginSessionRepository.delete(session);
             telegramBot.onLoginComplete(Long.parseLong(session.getChatId()), educationAppUser.getFirstName());
@@ -140,6 +140,16 @@ public class BotEndpoint {
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("close.html");
         return modelAndView;
+    }
+
+    @GetMapping("/user")
+    public void user(@RequestParam String id, HttpServletResponse response) {
+        var user = botUserRepository.findBotUserBySub(id);
+        if (user.isPresent()) {
+            response.setStatus(204);
+        } else {
+            response.setStatus(404);
+        }
     }
 
     private String constructLoginUri(String state) {

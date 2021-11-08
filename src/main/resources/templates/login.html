@@ -1,4 +1,4 @@
-<html lang="ru">
+<html lang="ru" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
     <title>Авторизация Telegram</title>
@@ -22,8 +22,8 @@
     <section class="login_content" id="login-container">
         <div class="login_photos">
             <span class="login_telegram_photo_wrap arrowed">
-                <a id="user_link" target="_blank">
-                    <img id="user_image" class="login_user_photo" img>
+                <a th:href="${userLink}" target="_blank">
+                    <img th:src="${photo_url}" class="login_user_photo" img>
                 </a>
             </span>
             <a href="https://u-with-me.education" target="_blank">
@@ -33,16 +33,14 @@
         <div class="login_header_text">
             Нажмите далее, чтобы привязать Telegram аккаунт
             <br>
-            <a id="user_line" class="bot_name" dir="auto" target="_blank"></a>
+            <a th:text="${username}" th:href="${userLink}" class="bot_name" dir="auto" target="_blank"></a>
             к вашему аккаунту
             <a class="bot_name" dir="auto" href="https://u-with-me.education" target="_blank">University With Me</a>
-            <br>
-            Если это не ваш Telegram аккаунт, пожалуйста, нажмите выйти
         </div>
         <div class="login_button_wrap">
             <button class="button-item button-item-flat ripple-handler" onclick="loginCancel()"
                     type="button">
-                <span class="button-item-label">Выйти</span>
+                <span class="button-item-label">Отмена</span>
                 <span class="ripple-mask"><span class="ripple"></span></span>
             </button>
             <button class="button-item ripple-handler" type="button" onclick="loginConfirm()">
@@ -53,47 +51,17 @@
     </section>
 </main>
 
-<script>
-    document.getElementById('user_image').src = getCookie("photo_url");
-    document.getElementById('user_link').href = "https://t.me/" + getCookie("username");
-    document.getElementById('user_line').href = "https://t.me/" + getCookie("username");
-    document.getElementById('user_line').textContent = getCookie("username");
-
+<script th:inline="javascript">
     function loginCancel() {
-        deleteAllCookies();
         window.location.href = '/close';
     }
 
     function loginConfirm() {
         let xmlHttp = new XMLHttpRequest();
         xmlHttp.open("GET", "complete", false);
-        xmlHttp.setRequestHeader("Authorization", "Bearer " + getCookie("authToken"))
+        xmlHttp.setRequestHeader("Authorization", "Bearer " + [[${token}]])
         xmlHttp.send(null);
-        deleteAllCookies();
         window.location.href = '/close';
-    }
-
-    function getCookie(name) {
-        const nameEQ = name + "=";
-        const ca = document.cookie.split(';');
-        for (let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-            if (c.indexOf(nameEQ) === 0)
-                return c.substring(nameEQ.length, c.length);
-        }
-        return null;
-    }
-
-    function deleteAllCookies() {
-        let cookies = document.cookie.split(";");
-
-        for (let i = 0; i < cookies.length; i++) {
-            let cookie = cookies[i];
-            let eqPos = cookie.indexOf("=");
-            let name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        }
     }
 </script>
 </body>

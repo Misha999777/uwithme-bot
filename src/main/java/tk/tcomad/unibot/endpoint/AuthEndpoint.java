@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
@@ -23,6 +22,7 @@ import org.keycloak.KeycloakSecurityContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -77,7 +77,7 @@ public class AuthEndpoint {
     }
 
     @GetMapping("/token")
-    public ModelAndView token(@RequestParam String state, @RequestParam String code, HttpServletResponse response) {
+    public String token(@RequestParam String state, @RequestParam String code, Model model) {
         var session = loginSessionRepository.findById(state).orElseThrow();
 
         var token = keycloakClient.getToken(new AuthTokenRequest(code,
@@ -91,13 +91,11 @@ public class AuthEndpoint {
         session.setUserId(user.getSub());
         loginSessionRepository.save(session);
 
-        response.addCookie(new Cookie("photo_url", session.getAvatarUrl()));
-        response.addCookie(new Cookie("username", session.getUsername()));
-        response.addCookie(new Cookie("authToken", token.getAccess_token()));
-
-        ModelAndView modelAndView = new ModelAndView();
-        modelAndView.setViewName("login.html");
-        return modelAndView;
+        model.addAttribute("username", session.getUsername());
+        model.addAttribute("photo_url", session.getAvatarUrl());
+        model.addAttribute("token", token.getAccess_token());
+        model.addAttribute("userLink", "https://t.me/" + session.getUsername());
+        return "login.html";
     }
 
     @GetMapping("/complete")

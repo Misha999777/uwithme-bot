@@ -6,5 +6,5 @@ import org.springframework.data.repository.CrudRepository;
 import tk.tcomad.unibot.entity.BotUser;
 
 public interface BotUserRepository extends CrudRepository<BotUser, Long> {
-    Optional<BotUser> findBotUserBySub(String sub);
+    Optional<BotUser> findBotUserByUserId(String userId);
 }

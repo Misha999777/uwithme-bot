@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class KeycloakUserApi {
+public class UserInfoResponse {
 
     String sub;
     String name;

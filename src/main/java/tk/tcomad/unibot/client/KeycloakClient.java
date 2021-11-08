@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import tk.tcomad.unibot.client.config.KeycloakClientConfig;
 import tk.tcomad.unibot.dto.keycloak.AuthTokenRequest;
-import tk.tcomad.unibot.dto.keycloak.KeycloakUserApi;
+import tk.tcomad.unibot.dto.keycloak.UserInfoResponse;
 import tk.tcomad.unibot.dto.keycloak.TokenResponse;
 
 @FeignClient(name = "KeycloakClient",
@@ -19,5 +19,5 @@ public interface KeycloakClient {
     TokenResponse getToken(@RequestBody AuthTokenRequest request);
 
     @GetMapping("/protocol/openid-connect/userinfo")
-    KeycloakUserApi getUser(@RequestHeader("authorization") String token);
+    UserInfoResponse getUser(@RequestHeader("authorization") String token);
 }

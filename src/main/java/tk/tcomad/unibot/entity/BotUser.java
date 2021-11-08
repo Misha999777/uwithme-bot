@@ -17,6 +17,6 @@ public class BotUser implements Serializable {
 
     @Id
     private Long chatId;
+    private String userId;
     private Long groupId;
-    private String sub;
 }

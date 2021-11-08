@@ -1,4 +1,4 @@
-package tk.tcomad.unibot.dto.uwithme;
+package tk.tcomad.unibot.dto.educationapp;
 
 import java.util.Date;
 

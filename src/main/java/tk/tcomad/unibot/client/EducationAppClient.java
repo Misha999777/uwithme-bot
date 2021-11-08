@@ -7,14 +7,14 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import tk.tcomad.unibot.client.config.UWithMeClientConfig;
-import tk.tcomad.unibot.dto.uwithme.FileApi;
-import tk.tcomad.unibot.dto.uwithme.LessonApi;
-import tk.tcomad.unibot.dto.uwithme.UserApi;
+import tk.tcomad.unibot.client.config.EducationAppClientConfig;
+import tk.tcomad.unibot.dto.educationapp.FileApi;
+import tk.tcomad.unibot.dto.educationapp.LessonApi;
+import tk.tcomad.unibot.dto.educationapp.UserApi;
 
 @FeignClient(name = "KeycloakClient1",
         url = "${education.app.server.uri}",
-        configuration = UWithMeClientConfig.class)
+        configuration = EducationAppClientConfig.class)
 public interface EducationAppClient {
 
     @RequestMapping(method = RequestMethod.GET, value = "/users/students/groupId/{groupId}")

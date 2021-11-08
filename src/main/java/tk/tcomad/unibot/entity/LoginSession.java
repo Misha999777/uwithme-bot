@@ -13,10 +13,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LoginSession {
 
+    @Id
+    private String stateToken;
     private String chatId;
     private String username;
     private String avatarUrl;
-    @Id
-    private String stateToken;
-    private String sub;
+    private String userId;
 }

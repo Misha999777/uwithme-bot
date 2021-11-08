@@ -4,7 +4,7 @@ import feign.RequestInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
 
-public class UWithMeClientConfig {
+public class EducationAppClientConfig {
 
     @Bean
     public RequestInterceptor oauth2HttpRequestInterceptor(

@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -43,8 +45,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import tk.tcomad.unibot.client.EducationAppClient;
-import tk.tcomad.unibot.dto.uwithme.BotData;
-import tk.tcomad.unibot.dto.uwithme.LessonApi;
+import tk.tcomad.unibot.dto.educationapp.BotData;
+import tk.tcomad.unibot.dto.educationapp.LessonApi;
 import tk.tcomad.unibot.repository.BotUserRepository;
 
 @Component
@@ -136,12 +138,13 @@ public class TelegramBot extends AbilityBot {
     }
 
     private void sendMap(Long chatId, Map<String, String> map) {
-        List<List<InlineKeyboardButton>> keyboard = map.entrySet().stream()
-                                                       .map(command -> new InlineKeyboardButton()
-                                                               .setText(command.getKey())
-                                                               .setCallbackData(command.getValue()))
-                                                       .map(List::of)
-                                                       .collect(Collectors.toList());
+        final AtomicInteger counter = new AtomicInteger();
+        var keyboard = new ArrayList<>(map.entrySet().stream()
+                                          .map(command -> new InlineKeyboardButton()
+                                                  .setText(command.getKey())
+                                                  .setCallbackData(command.getValue()))
+                                          .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / 2))
+                                          .values());
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup().setKeyboard(keyboard);
 
         sendMessageWithMarkup(chatId, SELECT_MESSAGE, markup);

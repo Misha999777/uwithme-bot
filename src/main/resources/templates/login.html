@@ -54,6 +54,10 @@
 </main>
 
 <script>
+    document.getElementById('user_image').src = getCookie("photo_url");
+    document.getElementById('user_link').href = "https://t.me/" + getCookie("username");
+    document.getElementById('user_line').href = "https://t.me/" + getCookie("username");
+    document.getElementById('user_line').textContent = getCookie("username");
 
     function loginCancel() {
         deleteAllCookies();
@@ -68,11 +72,6 @@
         deleteAllCookies();
         window.location.href = '/close';
     }
-
-    document.getElementById('user_image').src = getCookie("photo_url");
-    document.getElementById('user_link').href = "https://t.me/" + getCookie("username");
-    document.getElementById('user_line').href = "https://t.me/" + getCookie("username");
-    document.getElementById('user_line').textContent = getCookie("username");
 
     function getCookie(name) {
         const nameEQ = name + "=";

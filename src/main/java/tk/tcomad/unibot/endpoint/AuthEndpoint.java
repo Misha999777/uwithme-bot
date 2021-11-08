@@ -39,7 +39,7 @@ import tk.tcomad.unibot.telegram.TelegramBot;
 
 @Controller
 @RequiredArgsConstructor
-public class BotEndpoint {
+public class AuthEndpoint {
 
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
@@ -65,10 +65,10 @@ public class BotEndpoint {
     public void login(HttpServletResponse httpServletResponse, @RequestParam Map<String, String> request) {
         checkAuth(request);
         var loginSession = loginSessionRepository.findLoginSessionByChatId(request.get("id"))
-                                                 .orElse(new LoginSession(request.get("id"),
+                                                 .orElse(new LoginSession(UUID.randomUUID().toString(),
+                                                                          request.get("id"),
                                                                           request.get("username"),
                                                                           request.get("photo_url"),
-                                                                          UUID.randomUUID().toString(),
                                                                           null));
         loginSessionRepository.save(loginSession);
         httpServletResponse.setHeader("Location", constructLoginUri(loginSession.getStateToken()));
@@ -88,7 +88,7 @@ public class BotEndpoint {
 
         var user = keycloakClient.getUser(BEARER + SPACE + token.getAccess_token());
 
-        session.setSub(user.getSub());
+        session.setUserId(user.getSub());
         loginSessionRepository.save(session);
 
         response.addCookie(new Cookie("photo_url", session.getAvatarUrl()));
@@ -110,8 +110,7 @@ public class BotEndpoint {
             throw new RuntimeException();
         }
 
-        var session = loginSessionRepository.findLoginSessionBySub(subject);
-
+        var session = loginSessionRepository.findLoginSessionByUserId(subject);
         Objects.requireNonNull(session);
 
         try {
@@ -120,7 +119,7 @@ public class BotEndpoint {
             Objects.requireNonNull(educationAppUser);
             Objects.requireNonNull(educationAppUser.getStudyGroupId());
 
-            var botUser = new BotUser(Long.parseLong(session.getChatId()), educationAppUser.getStudyGroupId(), subject);
+            var botUser = new BotUser(Long.parseLong(session.getChatId()), subject, educationAppUser.getStudyGroupId());
             botUserRepository.save(botUser);
             loginSessionRepository.delete(session);
             telegramBot.onLoginComplete(Long.parseLong(session.getChatId()), educationAppUser.getFirstName());
@@ -139,7 +138,7 @@ public class BotEndpoint {
 
     @GetMapping("/user")
     public void user(@RequestParam String id, HttpServletResponse response) {
-        var user = botUserRepository.findBotUserBySub(id);
+        var user = botUserRepository.findBotUserByUserId(id);
         if (user.isPresent()) {
             response.setStatus(204);
         } else {

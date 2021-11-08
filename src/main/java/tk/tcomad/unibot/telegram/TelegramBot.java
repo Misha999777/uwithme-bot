@@ -94,7 +94,7 @@ public class TelegramBot extends AbilityBot {
         return creatorId;
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused"})
     public Ability sendWelcome() {
         return Ability
                 .builder()
@@ -106,7 +106,7 @@ public class TelegramBot extends AbilityBot {
                 .build();
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused"})
     public Reply receiveCallback() {
         Consumer<Update> action = upd -> {
             AnswerCallbackQuery answer = new AnswerCallbackQuery();
@@ -189,6 +189,12 @@ public class TelegramBot extends AbilityBot {
                 sendList(chatId, studentsClient.getFiles(getUserGroup(chatId)).stream()
                                                .filter(fileApi -> fileApi.getType() == 0)
                                                .collect(Collectors.toList()));
+                break;
+            case EXIT:
+                if (botUserRepository.existsById(chatId)) {
+                    botUserRepository.deleteById(chatId);
+                }
+                sendWelcome(chatId);
                 break;
         }
     }

@@ -15,7 +15,8 @@ public enum Command {
     STUDENTS(Pair.of("Студенты", "/getstudents")),
     TEACHERS(Pair.of("Преподаватели", "/getteachers")),
     LECTURES(Pair.of("Лекции", "/getlectures")),
-    TASKS(Pair.of("Задания", "/gettasks"));
+    TASKS(Pair.of("Задания", "/gettasks")),
+    EXIT(Pair.of("Выйти", "/exit"));
 
     private final Pair<String, String> message;
 

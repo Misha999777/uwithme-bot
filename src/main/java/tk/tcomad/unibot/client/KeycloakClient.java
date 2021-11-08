@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import tk.tcomad.unibot.client.config.KeycloakClientConfig;
 import tk.tcomad.unibot.dto.keycloak.AuthTokenRequest;
 import tk.tcomad.unibot.dto.keycloak.KeycloakUserApi;
+import tk.tcomad.unibot.dto.keycloak.LogoutRequest;
 import tk.tcomad.unibot.dto.keycloak.TokenResponse;
 
 @FeignClient(name = "KeycloakClient",
@@ -20,4 +21,7 @@ public interface KeycloakClient {
 
     @GetMapping("/protocol/openid-connect/userinfo")
     KeycloakUserApi getUser(@RequestHeader("authorization") String token);
+
+    @PostMapping(value = "/protocol/openid-connect/logout", consumes = "application/x-www-form-urlencoded")
+    void logoutUser(@RequestHeader("Authorization") String token, @RequestBody LogoutRequest logoutRequest);
 }

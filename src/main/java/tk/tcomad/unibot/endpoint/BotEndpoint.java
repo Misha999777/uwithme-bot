@@ -31,6 +31,7 @@ import org.springframework.web.servlet.ModelAndView;
 import tk.tcomad.unibot.client.EducationAppClient;
 import tk.tcomad.unibot.client.KeycloakClient;
 import tk.tcomad.unibot.dto.keycloak.AuthTokenRequest;
+import tk.tcomad.unibot.dto.keycloak.LogoutRequest;
 import tk.tcomad.unibot.entity.BotUser;
 import tk.tcomad.unibot.entity.LoginSession;
 import tk.tcomad.unibot.repository.BotUserRepository;
@@ -81,11 +82,17 @@ public class BotEndpoint {
         var session = loginSessionRepository.findById(state).orElseThrow();
 
         var token = keycloakClient.getToken(new AuthTokenRequest(code,
-                                                                 redirectUri + "/token",
-                                                                 client,
-                                                                 "authorization_code",
-                                                                 clientSecret));
+                                                                                redirectUri + "/token",
+                                                                                client,
+                                                                                "authorization_code",
+                                                                                clientSecret));
+
         var user = keycloakClient.getUser(BEARER + SPACE + token.getAccess_token());
+
+        keycloakClient.logoutUser(BEARER + SPACE + token.getAccess_token(),
+                                  new LogoutRequest(token.getRefresh_token(),
+                                                    client,
+                                                    clientSecret));
         session.setSub(user.getSub());
         loginSessionRepository.save(session);
 
@@ -103,6 +110,11 @@ public class BotEndpoint {
     public void complete(HttpServletRequest request) {
         var context = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
         var subject = context.getToken().getSubject();
+
+        if (!Objects.equals(context.getToken().getIssuedFor(), client)) {
+            throw new RuntimeException();
+        }
+
         var session = loginSessionRepository.findLoginSessionBySub(subject);
 
         Objects.requireNonNull(session);

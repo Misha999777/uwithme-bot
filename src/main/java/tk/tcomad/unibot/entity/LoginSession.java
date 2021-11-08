@@ -1,5 +1,6 @@
 package tk.tcomad.unibot.entity;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
@@ -18,5 +19,6 @@ public class LoginSession {
     private String chatId;
     private String username;
     private String avatarUrl;
-    private String userId;
+    @Column(columnDefinition = "TEXT")
+    private String token;
 }

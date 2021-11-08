@@ -17,7 +17,4 @@ public interface KeycloakClient {
 
     @PostMapping(value = "/protocol/openid-connect/token", consumes = "application/x-www-form-urlencoded")
     TokenResponse getToken(@RequestBody AuthTokenRequest request);
-
-    @GetMapping("/protocol/openid-connect/userinfo")
-    UserInfoResponse getUser(@RequestHeader("authorization") String token);
 }

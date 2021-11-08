@@ -1,8 +1,5 @@
 package tk.tcomad.unibot.endpoint;
 
-import static org.apache.commons.lang3.StringUtils.SPACE;
-import static org.springframework.cloud.openfeign.security.OAuth2FeignRequestInterceptor.BEARER;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Map;
@@ -64,31 +61,30 @@ public class AuthEndpoint {
     @Transactional
     public void login(HttpServletResponse httpServletResponse, @RequestParam Map<String, String> request) {
         checkAuth(request);
-        var loginSession = loginSessionRepository.findLoginSessionByChatId(request.get("id"))
-                                                 .orElse(new LoginSession(UUID.randomUUID().toString(),
-                                                                          request.get("id"),
-                                                                          request.get("username"),
-                                                                          request.get("photo_url"),
-                                                                          null));
-        loginSessionRepository.save(loginSession);
-        httpServletResponse.setHeader("Location", constructLoginUri(loginSession.getStateToken()));
 
+        var loginSession = new LoginSession(UUID.randomUUID().toString(),
+                                            request.get("id"),
+                                            request.get("username"),
+                                            request.get("photo_url"),
+                                            null);
+
+        loginSessionRepository.deleteAllByChatId(request.get("id"));
+        loginSessionRepository.save(loginSession);
+
+        httpServletResponse.setHeader("Location", constructLoginUri(loginSession.getStateToken()));
         httpServletResponse.setStatus(302);
     }
 
     @GetMapping("/token")
-    public String token(@RequestParam String state, @RequestParam String code, Model model) {
+    public String token(Model model, @RequestParam String state, @RequestParam String code) {
         var session = loginSessionRepository.findById(state).orElseThrow();
-
         var token = keycloakClient.getToken(new AuthTokenRequest(code,
-                                                                                redirectUri + "/token",
-                                                                                client,
-                                                                                "authorization_code",
-                                                                                clientSecret));
+                                                                 redirectUri + "/token",
+                                                                 client,
+                                                                 "authorization_code",
+                                                                 clientSecret));
 
-        var user = keycloakClient.getUser(BEARER + SPACE + token.getAccess_token());
-
-        session.setUserId(user.getSub());
+        session.setToken(token.getAccess_token());
         loginSessionRepository.save(session);
 
         model.addAttribute("username", session.getUsername());
@@ -102,27 +98,27 @@ public class AuthEndpoint {
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void complete(HttpServletRequest request) {
         var context = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
-        var subject = context.getToken().getSubject();
-
+        var tokenString = context.getTokenString();
         if (!Objects.equals(context.getToken().getIssuedFor(), client)) {
             throw new RuntimeException();
         }
 
-        var session = loginSessionRepository.findLoginSessionByUserId(subject);
+        var session = loginSessionRepository.findLoginSessionByToken(tokenString);
         Objects.requireNonNull(session);
 
         try {
-            var educationAppUser = studentsClient.getUser(subject);
-
+            var educationAppUser = studentsClient.getUser(tokenString);
             Objects.requireNonNull(educationAppUser);
             Objects.requireNonNull(educationAppUser.getStudyGroupId());
 
-            var botUser = new BotUser(Long.parseLong(session.getChatId()), subject, educationAppUser.getStudyGroupId());
+            var botUser = new BotUser(Long.parseLong(session.getChatId()), educationAppUser.getStudyGroupId());
             botUserRepository.save(botUser);
             loginSessionRepository.delete(session);
+
             telegramBot.onLoginComplete(Long.parseLong(session.getChatId()), educationAppUser.getFirstName());
         } catch (Exception ignored) {
             loginSessionRepository.delete(session);
+
             telegramBot.onLoginFail(Long.parseLong(session.getChatId()));
         }
     }
@@ -132,16 +128,6 @@ public class AuthEndpoint {
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("close.html");
         return modelAndView;
-    }
-
-    @GetMapping("/user")
-    public void user(@RequestParam String id, HttpServletResponse response) {
-        var user = botUserRepository.findBotUserByUserId(id);
-        if (user.isPresent()) {
-            response.setStatus(204);
-        } else {
-            response.setStatus(404);
-        }
     }
 
     private String constructLoginUri(String state) {

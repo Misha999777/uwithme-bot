@@ -98,8 +98,9 @@ public class AuthEndpoint {
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void complete(HttpServletRequest request) {
         var context = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
+        var token = context.getToken();
         var tokenString = context.getTokenString();
-        if (!Objects.equals(context.getToken().getIssuedFor(), client)) {
+        if (!Objects.equals(token.getIssuedFor(), client)) {
             throw new RuntimeException();
         }
 
@@ -107,7 +108,7 @@ public class AuthEndpoint {
         Objects.requireNonNull(session);
 
         try {
-            var educationAppUser = studentsClient.getUser(tokenString);
+            var educationAppUser = studentsClient.getUser(token.getSubject());
             Objects.requireNonNull(educationAppUser);
             Objects.requireNonNull(educationAppUser.getStudyGroupId());
 

@@ -23,11 +23,11 @@
         <div class="login_photos">
             <span class="login_telegram_photo_wrap arrowed">
                 <a th:href="${userLink}" target="_blank">
-                    <img th:src="${photo_url}" class="login_user_photo" img>
+                    <img th:src="${photo_url}" class="login_user_photo" />
                 </a>
             </span>
             <a href="https://u-with-me.education" target="_blank">
-                <img class="login_bot_photo" src="https://u-with-me.education/logo512.png" img>
+                <img style="background: white" class="login_bot_photo" src="https://u-with-me.education/logo512.png" />
             </a>
         </div>
         <div class="login_header_text">
@@ -58,7 +58,7 @@
 
     function loginConfirm() {
         let xmlHttp = new XMLHttpRequest();
-        xmlHttp.open("GET", "complete", false);
+        xmlHttp.open("GET", "complete", true);
         xmlHttp.setRequestHeader("Authorization", "Bearer " + [[${token}]])
         xmlHttp.send(null);
         window.location.href = '/close';

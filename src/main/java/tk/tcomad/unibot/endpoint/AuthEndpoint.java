@@ -147,7 +147,7 @@ public class AuthEndpoint {
     }
 
     private String constructLogoutUri() {
-        return logoutUri.concat("&redirect_uri=")
+        return logoutUri.concat("?redirect_uri=")
                         .concat(redirectUri)
                         .concat("/close");
     }

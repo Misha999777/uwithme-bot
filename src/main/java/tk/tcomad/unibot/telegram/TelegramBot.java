@@ -151,22 +151,10 @@ public class TelegramBot extends AbilityBot {
             silent.execute(deleteMessage);
         }
         sendMessageWithText(chatId, FAIL_MESSAGE);
-        sendLogout(chatId);
     }
 
     private void sendMenu(Long chatId) {
         Map<String, String> commands = Arrays.stream(Command.values())
-                                             .map(Command::getMessage)
-                                             .collect(LinkedHashMap::new,
-                                                      (map, item) -> map.put(item.getLeft(), item.getRight()),
-                                                      Map::putAll);
-
-        sendMap(chatId, commands);
-    }
-
-    private void sendLogout(Long chatId) {
-        Map<String, String> commands = Arrays.stream(Command.values())
-                .filter(command -> command == Command.EXIT)
                                              .map(Command::getMessage)
                                              .collect(LinkedHashMap::new,
                                                       (map, item) -> map.put(item.getLeft(), item.getRight()),

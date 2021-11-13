@@ -203,11 +203,6 @@ public class TelegramBot extends AbilityBot {
     }
 
     private void processCommand(Long chatId, Command payload) {
-        var groupId = botUserRepository.findById(chatId).map(BotUser::getGroupId).orElse(null);
-        if (Objects.isNull(groupId)) {
-            sendWelcome(chatId);
-            return;
-        }
         switch (payload) {
             case TIMETABLE:
                 Map<String, String> days = Arrays.stream(Day.values())
@@ -249,11 +244,6 @@ public class TelegramBot extends AbilityBot {
 
     @SneakyThrows
     private void processDetail(long chatId, String id, Callback callback) {
-        var groupId = botUserRepository.findById(chatId).map(BotUser::getGroupId).orElse(null);
-        if (Objects.isNull(groupId)) {
-            sendWelcome(chatId);
-            return;
-        }
         switch (callback) {
             case STUDENT:
             case TEACHER:
@@ -278,8 +268,7 @@ public class TelegramBot extends AbilityBot {
     }
 
     private void sendWelcome(Long chatId) {
-        var groupId = botUserRepository.findById(chatId).map(BotUser::getGroupId).orElse(null);
-        if (Objects.isNull(groupId)) {
+        if (botUserRepository.findById(chatId).isEmpty()) {
             List<List<InlineKeyboardButton>> keyboard =
                     List.of(List.of(new InlineKeyboardButton()
                                             .setText(AUTHORIZE_BUTTON_NAME)

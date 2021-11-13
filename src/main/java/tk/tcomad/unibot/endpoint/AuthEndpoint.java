@@ -40,6 +40,8 @@ public class AuthEndpoint {
 
     @Value("${spring.security.oauth2.client.provider.keycloak.authorization-uri}")
     private String authUri;
+    @Value("${user.logout.uri}")
+    private String logoutUri;
     @Value("${keycloak.resource}")
     private String client;
     @Value("${user.login.redirect.uri}")
@@ -91,6 +93,7 @@ public class AuthEndpoint {
         model.addAttribute("photo_url", session.getAvatarUrl());
         model.addAttribute("token", token.getAccess_token());
         model.addAttribute("userLink", "https://t.me/" + session.getUsername());
+        model.addAttribute("logoutUri", constructLogoutUri());
         return "login.html";
     }
 
@@ -141,6 +144,12 @@ public class AuthEndpoint {
                       .concat("&scope=openid")
                       .concat("&state=")
                       .concat(state);
+    }
+
+    private String constructLogoutUri() {
+        return logoutUri.concat("&redirect_uri=")
+                        .concat(redirectUri)
+                        .concat("/close");
     }
 
     @SneakyThrows

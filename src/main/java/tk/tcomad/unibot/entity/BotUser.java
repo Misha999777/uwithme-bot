@@ -2,6 +2,7 @@ package tk.tcomad.unibot.entity;
 
 import java.io.Serializable;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
@@ -18,4 +19,5 @@ public class BotUser implements Serializable {
     @Id
     private Long chatId;
     private Long groupId;
+    private Integer loginMessageId;
 }

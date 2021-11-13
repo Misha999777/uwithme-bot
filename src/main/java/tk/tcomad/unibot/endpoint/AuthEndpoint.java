@@ -28,7 +28,7 @@ import org.springframework.web.servlet.ModelAndView;
 import tk.tcomad.unibot.client.EducationAppClient;
 import tk.tcomad.unibot.client.KeycloakClient;
 import tk.tcomad.unibot.dto.keycloak.AuthTokenRequest;
-import tk.tcomad.unibot.entity.BotUser;
+import tk.tcomad.unibot.dto.keycloak.LogoutRequest;
 import tk.tcomad.unibot.entity.LoginSession;
 import tk.tcomad.unibot.repository.BotUserRepository;
 import tk.tcomad.unibot.repository.LoginSessionRepository;
@@ -84,6 +84,8 @@ public class AuthEndpoint {
                                                                  "authorization_code",
                                                                  clientSecret));
 
+        keycloakClient.logout(new LogoutRequest(token.getRefresh_token(), client, clientSecret));
+
         session.setToken(token.getAccess_token());
         loginSessionRepository.save(session);
 
@@ -112,15 +114,14 @@ public class AuthEndpoint {
             Objects.requireNonNull(educationAppUser);
             Objects.requireNonNull(educationAppUser.getStudyGroupId());
 
-            var botUser = new BotUser(Long.parseLong(session.getChatId()), educationAppUser.getStudyGroupId());
+            var botUser = botUserRepository.findById(Long.parseLong(session.getChatId())).orElseThrow();
+            botUser.setGroupId(educationAppUser.getStudyGroupId());
             botUserRepository.save(botUser);
-            loginSessionRepository.delete(session);
-
             telegramBot.onLoginComplete(Long.parseLong(session.getChatId()), educationAppUser.getFirstName());
         } catch (Exception ignored) {
-            loginSessionRepository.delete(session);
-
             telegramBot.onLoginFail(Long.parseLong(session.getChatId()));
+        } finally {
+            loginSessionRepository.delete(session);
         }
     }
 
@@ -132,17 +133,15 @@ public class AuthEndpoint {
     }
 
     private String constructLoginUri(String state) {
-        return new StringBuilder().append(authUri)
-                                  .append("?client_id=")
-                                  .append(client)
-                                  .append("&redirect_uri=")
-                                  .append(redirectUri)
-                                  .append("/token")
-                                  .append("&response_type=code")
-                                  .append("&scope=openid")
-                                  .append("&state=")
-                                  .append(state)
-                                  .toString();
+        return authUri.concat("?client_id=")
+                      .concat(client)
+                      .concat("&redirect_uri=")
+                      .concat(redirectUri)
+                      .concat("/token")
+                      .concat("&response_type=code")
+                      .concat("&scope=openid")
+                      .concat("&state=")
+                      .concat(state);
     }
 
     @SneakyThrows

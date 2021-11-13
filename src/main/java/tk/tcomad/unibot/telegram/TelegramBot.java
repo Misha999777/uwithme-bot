@@ -38,8 +38,10 @@ import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.LoginUrl;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -47,6 +49,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import tk.tcomad.unibot.client.EducationAppClient;
 import tk.tcomad.unibot.dto.educationapp.BotData;
 import tk.tcomad.unibot.dto.educationapp.LessonApi;
+import tk.tcomad.unibot.entity.BotUser;
 import tk.tcomad.unibot.repository.BotUserRepository;
 
 @Component
@@ -119,16 +122,42 @@ public class TelegramBot extends AbilityBot {
     }
 
     public void onLoginComplete(Long chatId, String userName) {
+        var botUser = botUserRepository.findById(chatId).orElseThrow();
+        if (Objects.nonNull(botUser.getLoginMessageId())) {
+            DeleteMessage deleteMessage = new DeleteMessage();
+            deleteMessage.setChatId(chatId);
+            deleteMessage.setMessageId(botUser.getLoginMessageId());
+            silent.execute(deleteMessage);
+        }
         sendMessageWithText(chatId, WELCOME_MESSAGE + SPACE + userName);
         sendMenu(chatId);
     }
 
     public void onLoginFail(Long chatId) {
+        var botUser = botUserRepository.findById(chatId).orElseThrow();
+        if (Objects.nonNull(botUser.getLoginMessageId())) {
+            DeleteMessage deleteMessage = new DeleteMessage();
+            deleteMessage.setChatId(chatId);
+            deleteMessage.setMessageId(botUser.getLoginMessageId());
+            silent.execute(deleteMessage);
+        }
         sendMessageWithText(chatId, FAIL_MESSAGE);
+        sendLogout(chatId);
     }
 
     private void sendMenu(Long chatId) {
         Map<String, String> commands = Arrays.stream(Command.values())
+                                             .map(Command::getMessage)
+                                             .collect(LinkedHashMap::new,
+                                                      (map, item) -> map.put(item.getLeft(), item.getRight()),
+                                                      Map::putAll);
+
+        sendMap(chatId, commands);
+    }
+
+    private void sendLogout(Long chatId) {
+        Map<String, String> commands = Arrays.stream(Command.values())
+                .filter(command -> command == Command.EXIT)
                                              .map(Command::getMessage)
                                              .collect(LinkedHashMap::new,
                                                       (map, item) -> map.put(item.getLeft(), item.getRight()),
@@ -232,7 +261,11 @@ public class TelegramBot extends AbilityBot {
                                             .setLoginUrl(new LoginUrl().setUrl(redirectUri + "/login"))));
             InlineKeyboardMarkup markup = new InlineKeyboardMarkup().setKeyboard(keyboard);
 
-            sendMessageWithMarkup(chatId, "Пожалуйста, авторизируйтесь", markup);
+            var loginMessageId = sendMessageWithMarkup(chatId, "Пожалуйста, авторизируйтесь", markup);
+            var botUser = new BotUser();
+            botUser.setLoginMessageId(loginMessageId);
+            botUser.setChatId(chatId);
+            botUserRepository.save(botUser);
         } else {
             sendMenu(chatId);
         }
@@ -264,13 +297,13 @@ public class TelegramBot extends AbilityBot {
         sender.sendDocument(message);
     }
 
-    private void sendMessageWithMarkup(Long chatId, String text, InlineKeyboardMarkup markup) {
+    private Integer sendMessageWithMarkup(Long chatId, String text, InlineKeyboardMarkup markup) {
         SendMessage message = new SendMessage()
                 .setChatId(chatId)
                 .setText(text)
                 .setReplyMarkup(markup);
 
-        silent.execute(message);
+        return silent.execute(message).map(Message::getMessageId).orElse(null);
     }
 
     private InlineKeyboardMarkup createMarkup(Collection<? extends BotData> collection) {

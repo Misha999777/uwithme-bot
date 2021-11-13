@@ -48,12 +48,20 @@ public class AuthEndpoint {
     private String key;
     @Value("${keycloak.credentials.secret}")
     private String clientSecret;
+    @Value("${education.app.frontend.uri}")
+    private String frontendUri;
 
     private final BotUserRepository botUserRepository;
     private final TelegramBot telegramBot;
     private final KeycloakClient keycloakClient;
     private final EducationAppClient studentsClient;
     private final LoginSessionRepository loginSessionRepository;
+
+    @GetMapping
+    public void redirect(HttpServletResponse httpServletResponse) {
+        httpServletResponse.setHeader("Location", frontendUri);
+        httpServletResponse.setStatus(302);
+    }
 
     @GetMapping("/login")
     @Transactional

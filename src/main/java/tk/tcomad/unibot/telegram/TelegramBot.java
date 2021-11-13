@@ -151,22 +151,10 @@ public class TelegramBot extends AbilityBot {
             silent.execute(deleteMessage);
         }
         sendMessageWithText(chatId, FAIL_MESSAGE);
-        sendLogout(chatId);
     }
 
     private void sendMenu(Long chatId) {
         Map<String, String> commands = Arrays.stream(Command.values())
-                                             .map(Command::getMessage)
-                                             .collect(LinkedHashMap::new,
-                                                      (map, item) -> map.put(item.getLeft(), item.getRight()),
-                                                      Map::putAll);
-
-        sendMap(chatId, commands);
-    }
-
-    private void sendLogout(Long chatId) {
-        Map<String, String> commands = Arrays.stream(Command.values())
-                .filter(command -> command == Command.EXIT)
                                              .map(Command::getMessage)
                                              .collect(LinkedHashMap::new,
                                                       (map, item) -> map.put(item.getLeft(), item.getRight()),
@@ -189,6 +177,11 @@ public class TelegramBot extends AbilityBot {
     }
 
     private void processCallback(long chatId, String payload) {
+        var groupId = botUserRepository.findById(chatId).map(BotUser::getGroupId).orElse(null);
+        if (Objects.isNull(groupId)) {
+            sendWelcome(chatId);
+            return;
+        }
         Optional<Command> optionalCommand = Command.fromMessage(payload);
         if (optionalCommand.isPresent()) {
             processCommand(chatId, optionalCommand.get());
@@ -268,7 +261,8 @@ public class TelegramBot extends AbilityBot {
     }
 
     private void sendWelcome(Long chatId) {
-        if (botUserRepository.findById(chatId).isEmpty()) {
+        var groupId = botUserRepository.findById(chatId).map(BotUser::getGroupId).orElse(null);
+        if (Objects.isNull(groupId)) {
             List<List<InlineKeyboardButton>> keyboard =
                     List.of(List.of(new InlineKeyboardButton()
                                             .setText(AUTHORIZE_BUTTON_NAME)

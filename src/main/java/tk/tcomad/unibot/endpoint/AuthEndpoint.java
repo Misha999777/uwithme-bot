@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
@@ -60,13 +59,13 @@ public class AuthEndpoint {
     @GetMapping("/login")
     @Transactional
     public void login(HttpServletResponse httpServletResponse, @RequestParam Map<String, String> request) {
-        checkAuth(request);
-
-        var loginSession = new LoginSession(UUID.randomUUID().toString(),
+        var loginSession = new LoginSession(request.get("hash"),
                                             request.get("id"),
                                             request.get("username"),
                                             request.get("photo_url"),
                                             null);
+
+        checkAuth(request);
 
         loginSessionRepository.deleteAllByChatId(request.get("id"));
         loginSessionRepository.save(loginSession);

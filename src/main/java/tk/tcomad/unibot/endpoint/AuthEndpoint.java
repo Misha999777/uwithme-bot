@@ -139,6 +139,7 @@ public class AuthEndpoint {
                       .concat("/token")
                       .concat("&response_type=code")
                       .concat("&scope=openid")
+                      .concat("&prompt=login")
                       .concat("&state=")
                       .concat(state);
     }

@@ -20,4 +20,6 @@ public class BotUser implements Serializable {
     private Long chatId;
     private Long groupId;
     private Integer loginMessageId;
+    @Column(columnDefinition = "TEXT")
+    private String refreshToken;
 }

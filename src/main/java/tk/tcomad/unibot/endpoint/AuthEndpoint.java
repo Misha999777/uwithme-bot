@@ -27,7 +27,6 @@ import org.springframework.web.servlet.ModelAndView;
 import tk.tcomad.unibot.client.EducationAppClient;
 import tk.tcomad.unibot.client.KeycloakClient;
 import tk.tcomad.unibot.dto.keycloak.AuthTokenRequest;
-import tk.tcomad.unibot.dto.keycloak.LogoutRequest;
 import tk.tcomad.unibot.entity.LoginSession;
 import tk.tcomad.unibot.repository.BotUserRepository;
 import tk.tcomad.unibot.repository.LoginSessionRepository;
@@ -63,6 +62,7 @@ public class AuthEndpoint {
                                             request.get("id"),
                                             request.get("username"),
                                             request.get("photo_url"),
+                                            null,
                                             null);
 
         checkAuth(request);
@@ -83,9 +83,8 @@ public class AuthEndpoint {
                                                                  "authorization_code",
                                                                  clientSecret));
 
-        keycloakClient.logout(new LogoutRequest(token.getRefresh_token(), client, clientSecret));
-
         session.setToken(token.getAccess_token());
+        session.setRefreshToken(token.getRefresh_token());
         loginSessionRepository.save(session);
 
         model.addAttribute("username", session.getUsername());
@@ -115,6 +114,7 @@ public class AuthEndpoint {
 
             var botUser = botUserRepository.findById(Long.parseLong(session.getChatId())).orElseThrow();
             botUser.setGroupId(educationAppUser.getStudyGroupId());
+            botUser.setRefreshToken(session.getRefreshToken());
             botUserRepository.save(botUser);
             telegramBot.onLoginComplete(Long.parseLong(session.getChatId()), educationAppUser.getFirstName());
         } catch (Exception ignored) {

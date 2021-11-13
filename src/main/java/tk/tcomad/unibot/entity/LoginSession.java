@@ -21,4 +21,6 @@ public class LoginSession {
     private String avatarUrl;
     @Column(columnDefinition = "TEXT")
     private String token;
+    @Column(columnDefinition = "TEXT")
+    private String refreshToken;
 }

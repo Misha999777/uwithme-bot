@@ -131,27 +131,29 @@ public class TelegramBot extends AbilityBot {
     }
 
     public void onLoginComplete(Long chatId, String userName) {
-        var botUser = botUserRepository.findById(chatId).orElseThrow();
-        if (Objects.nonNull(botUser.getLoginMessageId())) {
-            DeleteMessage deleteMessage = new DeleteMessage();
-            deleteMessage.setChatId(chatId);
-            deleteMessage.setMessageId(botUser.getLoginMessageId());
-            silent.execute(deleteMessage);
-        }
+        deleteLoginMessages(chatId);
         sendMessageWithText(chatId, WELCOME_MESSAGE + SPACE + userName);
         sendMenu(chatId);
     }
 
     public void onLoginFail(Long chatId) {
-        var botUser = botUserRepository.findById(chatId).orElseThrow();
-        if (Objects.nonNull(botUser.getLoginMessageId())) {
-            DeleteMessage deleteMessage = new DeleteMessage();
-            deleteMessage.setChatId(chatId);
-            deleteMessage.setMessageId(botUser.getLoginMessageId());
-            silent.execute(deleteMessage);
-        }
+        deleteLoginMessages(chatId);
         sendMessageWithText(chatId, FAIL_MESSAGE);
         sendLogout(chatId);
+    }
+
+    private void deleteLoginMessages(Long chatId) {
+        var botUser = botUserRepository.findById(chatId).orElseThrow();
+        botUser.getLoginMessageIds().stream()
+               .map(messageId -> buildDeleteMessage(chatId, messageId))
+               .forEach(silent::execute);
+    }
+
+    private DeleteMessage buildDeleteMessage(Long chatId, Integer messageId) {
+        DeleteMessage deleteMessage = new DeleteMessage();
+        deleteMessage.setChatId(chatId);
+        deleteMessage.setMessageId(messageId);
+        return deleteMessage;
     }
 
     private void sendMenu(Long chatId) {
@@ -280,10 +282,11 @@ public class TelegramBot extends AbilityBot {
                                             .setText(AUTHORIZE_BUTTON_NAME)
                                             .setLoginUrl(new LoginUrl().setUrl(redirectUri + "/login"))));
             InlineKeyboardMarkup markup = new InlineKeyboardMarkup().setKeyboard(keyboard);
-
             var loginMessageId = sendMessageWithMarkup(chatId, "Пожалуйста, авторизируйтесь", markup);
-            var botUser = new BotUser();
-            botUser.setLoginMessageId(loginMessageId);
+
+            var botUser = botUserRepository.findById(chatId)
+                                           .orElse(new BotUser());
+            botUser.getLoginMessageIds().add(loginMessageId);
             botUser.setChatId(chatId);
             botUserRepository.save(botUser);
         } else {

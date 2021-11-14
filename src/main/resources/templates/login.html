@@ -40,7 +40,7 @@
         <div class="login_button_wrap">
             <button class="button-item button-item-flat ripple-handler" onclick="loginCancel()"
                     type="button">
-                <span class="button-item-label">Отмена</span>
+                <span class="button-item-label">Выйти</span>
                 <span class="ripple-mask"><span class="ripple"></span></span>
             </button>
             <button class="button-item ripple-handler" type="button" onclick="loginConfirm()">
@@ -53,7 +53,7 @@
 
 <script th:inline="javascript">
     function loginCancel() {
-        window.location.href = '/close';
+        window.location.href = [[${logoutUri}]];
     }
 
     function loginConfirm() {

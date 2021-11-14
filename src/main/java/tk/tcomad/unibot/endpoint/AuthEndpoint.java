@@ -25,8 +25,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
 import tk.tcomad.unibot.client.EducationAppClient;
+import tk.tcomad.unibot.client.KeycloakAdminClient;
 import tk.tcomad.unibot.client.KeycloakClient;
 import tk.tcomad.unibot.dto.keycloak.AuthTokenRequest;
+import tk.tcomad.unibot.dto.keycloak.UserSession;
 import tk.tcomad.unibot.entity.LoginSession;
 import tk.tcomad.unibot.repository.BotUserRepository;
 import tk.tcomad.unibot.repository.LoginSessionRepository;
@@ -42,6 +44,8 @@ public class AuthEndpoint {
     private String authUri;
     @Value("${keycloak.resource}")
     private String client;
+    @Value("${resource.id}")
+    private String clientId;
     @Value("${user.login.redirect.uri}")
     private String redirectUri;
     @Value("${bot.key}")
@@ -56,6 +60,7 @@ public class AuthEndpoint {
     private final KeycloakClient keycloakClient;
     private final EducationAppClient studentsClient;
     private final LoginSessionRepository loginSessionRepository;
+    private final KeycloakAdminClient keycloakAdminClient;
 
     @GetMapping
     public void redirect(HttpServletResponse httpServletResponse) {
@@ -94,6 +99,14 @@ public class AuthEndpoint {
         session.setToken(token.getAccess_token());
         session.setRefreshToken(token.getRefresh_token());
         loginSessionRepository.save(session);
+
+        var userId = keycloakClient.getUserInfo("Bearer " + token.getAccess_token()).getSub();
+        keycloakAdminClient.getUserSessions(clientId).stream()
+                           .filter(userSession -> userSession.getUserId().equals(userId))
+                           .filter(userSession -> userSession.getClients().containsValue(client))
+                           .filter(userSession -> Objects.equals(userSession.getStart(), userSession.getLastAccess()))
+                           .map(UserSession::getId)
+                           .forEach(keycloakAdminClient::revokeUserSession);
 
         model.addAttribute("username", session.getUsername());
         model.addAttribute("photo_url", session.getAvatarUrl());

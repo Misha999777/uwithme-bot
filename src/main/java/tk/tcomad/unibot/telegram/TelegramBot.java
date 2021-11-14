@@ -147,6 +147,8 @@ public class TelegramBot extends AbilityBot {
         botUser.getLoginMessageIds().stream()
                .map(messageId -> buildDeleteMessage(chatId, messageId))
                .forEach(silent::execute);
+        botUser.getLoginMessageIds().clear();
+        botUserRepository.save(botUser);
     }
 
     private DeleteMessage buildDeleteMessage(Long chatId, Integer messageId) {

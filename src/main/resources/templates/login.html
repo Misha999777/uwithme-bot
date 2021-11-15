@@ -22,7 +22,7 @@
     <section class="login_content" id="login-container">
         <div class="login_photos">
             <span class="login_telegram_photo_wrap arrowed">
-                <a th:href="${userLink}" target="_blank">
+                <a th:href="${user_url}" target="_blank">
                     <img th:src="${photo_url}" class="login_user_photo" />
                 </a>
             </span>
@@ -33,7 +33,7 @@
         <div class="login_header_text">
             Нажмите далее, чтобы привязать Telegram аккаунт
             <br>
-            <a th:text="${username}" th:href="${userLink}" class="bot_name" dir="auto" target="_blank"></a>
+            <a th:text="${username}" th:href="${user_url}" class="bot_name" dir="auto" target="_blank"></a>
             к вашему аккаунту
             <a class="bot_name" dir="auto" href="https://u-with-me.education" target="_blank">University With Me</a>
         </div>
@@ -53,7 +53,7 @@
 
 <script th:inline="javascript">
     function loginCancel() {
-        window.location.href = [[${logoutUri}]];
+        window.location.href = [[${logout_url}]];
     }
 
     function loginConfirm() {

@@ -25,7 +25,5 @@ public class BotUser implements Serializable {
     @ElementCollection(fetch = FetchType.EAGER)
     private List<Integer> loginMessageIds = new ArrayList<>();
     private String userId;
-    @Column(columnDefinition = "TEXT")
-    private String refreshToken;
     private Long groupId;
 }

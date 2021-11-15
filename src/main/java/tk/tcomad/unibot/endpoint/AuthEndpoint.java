@@ -74,7 +74,6 @@ public class AuthEndpoint {
 
         var botUser = botUserRepository.findById(Long.parseLong(request.get("id"))).orElseThrow();
         botUser.setUserId(tokenResponse.getUserId());
-        botUser.setRefreshToken(tokenResponse.getRefresh_token());
         botUserRepository.save(botUser);
 
         stringUtility.constructModel(model, request, tokenResponse.getAccess_token());

@@ -2,6 +2,7 @@ package tk.tcomad.unibot.util;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -24,14 +25,15 @@ public class SHA256Utility {
 
     @SneakyThrows
     public void checkTelegramData(Map<String, String> request) {
-        request.remove("code");
-        String hash = request.get("hash");
-        request.remove("hash");
+        var requestCopy = new HashMap<>(request);
+        String hash = requestCopy.get("hash");
+        requestCopy.remove("hash");
+        requestCopy.remove("code");
 
-        String str = request.entrySet().stream()
-                            .sorted((a, b) -> a.getKey().compareToIgnoreCase(b.getKey()))
-                            .map(kvp -> kvp.getKey() + "=" + kvp.getValue())
-                            .collect(Collectors.joining("\n"));
+        String str = requestCopy.entrySet().stream()
+                                .sorted((a, b) -> a.getKey().compareToIgnoreCase(b.getKey()))
+                                .map(kvp -> kvp.getKey() + "=" + kvp.getValue())
+                                .collect(Collectors.joining("\n"));
 
         var spec = new SecretKeySpec(MessageDigest.getInstance(SHA_256).digest(key.getBytes(StandardCharsets.UTF_8)),
                                      HMAC_SHA_256);

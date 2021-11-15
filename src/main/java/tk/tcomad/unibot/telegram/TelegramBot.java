@@ -47,10 +47,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import tk.tcomad.unibot.client.EducationAppClient;
-import tk.tcomad.unibot.client.KeycloakClient;
 import tk.tcomad.unibot.dto.educationapp.BotData;
 import tk.tcomad.unibot.dto.educationapp.LessonApi;
-import tk.tcomad.unibot.dto.keycloak.LogoutRequest;
 import tk.tcomad.unibot.entity.BotUser;
 import tk.tcomad.unibot.repository.BotUserRepository;
 
@@ -64,10 +62,6 @@ public class TelegramBot extends AbilityBot {
     private String firstWeekStart;
     @Value("${user.login.redirect.uri}")
     private String redirectUri;
-    @Value("${keycloak.resource}")
-    private String client;
-    @Value("${keycloak.credentials.secret}")
-    private String clientSecret;
 
     private static final String WRONG_COMMAND_MESSAGE = "Неверная команда";
     private static final String NO_ELEMENTS_MESSAGE = "Данные отсутствуют";
@@ -79,20 +73,17 @@ public class TelegramBot extends AbilityBot {
     private final TelegramBotsApi telegramBotsApi;
     private final BotUserRepository botUserRepository;
     private final EducationAppClient studentsClient;
-    private final KeycloakClient keycloakClient;
 
     public TelegramBot(TelegramBotsApi botsApi,
                        DBContext dbContext,
                        @Value("${bot.key}") String key,
                        @Value("${bot.name}") String name,
                        BotUserRepository botUserRepository,
-                       EducationAppClient studentsClient,
-                       KeycloakClient keycloakClient) {
+                       EducationAppClient studentsClient) {
         super(key, name, dbContext);
         this.studentsClient = studentsClient;
         this.botUserRepository = botUserRepository;
         this.telegramBotsApi = botsApi;
-        this.keycloakClient = keycloakClient;
     }
 
     @PostConstruct
@@ -240,10 +231,6 @@ public class TelegramBot extends AbilityBot {
             case EXIT:
                 var botUser = botUserRepository.findById(chatId);
                 if (botUser.isPresent()) {
-                    try {
-                        keycloakClient.logout(new LogoutRequest(botUser.get().getRefreshToken(), client, clientSecret));
-                    } catch (Exception ignored) {}
-
                     botUserRepository.deleteById(chatId);
                 }
                 sendWelcome(chatId);

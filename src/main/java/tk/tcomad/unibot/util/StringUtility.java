@@ -68,20 +68,21 @@ public class StringUtility {
         return authUri.concat(params);
     }
 
-    public String constructLogoutUri() {
-        var params = new StringJoiner("&", "?", "")
-                .add(constructParam(REDIRECT_URI, redirectUri + CLOSE_PATH))
-                .toString();
-
-        return logoutUri.concat(params);
-    }
-
     public void constructModel(Model model, Map<String, String> request, String accessToken) {
         model.addAttribute(USERNAME, request.get(USERNAME));
         model.addAttribute(PHOTO_URL, request.get(PHOTO_URL));
         model.addAttribute(TOKEN, accessToken);
         model.addAttribute(USER_URL, T_ME + request.get(USERNAME));
-        model.addAttribute(LOGOUT_URL, constructLogoutUri());
+        model.addAttribute(LOGOUT_URL, constructLogoutUri(request));
+    }
+
+    private String constructLogoutUri(Map<String, String> request) {
+        var params = new StringJoiner("&", "?", "")
+                .add(constructParam(REDIRECT_URI, URLEncoder.encode(constructLoginUri(request),
+                                                                    StandardCharsets.UTF_8)))
+                .toString();
+
+        return logoutUri.concat(params);
     }
 
     private String constructParam(String name, String value) {

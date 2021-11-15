@@ -1,5 +1,6 @@
 package tk.tcomad.unibot.endpoint;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Map;
@@ -28,10 +29,9 @@ import tk.tcomad.unibot.client.EducationAppClient;
 import tk.tcomad.unibot.client.KeycloakAdminClient;
 import tk.tcomad.unibot.client.KeycloakClient;
 import tk.tcomad.unibot.dto.keycloak.AuthTokenRequest;
+import tk.tcomad.unibot.dto.keycloak.TokenResponse;
 import tk.tcomad.unibot.dto.keycloak.UserSession;
-import tk.tcomad.unibot.entity.LoginSession;
 import tk.tcomad.unibot.repository.BotUserRepository;
-import tk.tcomad.unibot.repository.LoginSessionRepository;
 import tk.tcomad.unibot.telegram.TelegramBot;
 
 @Controller
@@ -61,7 +61,6 @@ public class AuthEndpoint {
     private final TelegramBot telegramBot;
     private final KeycloakClient keycloakClient;
     private final EducationAppClient studentsClient;
-    private final LoginSessionRepository loginSessionRepository;
     private final KeycloakAdminClient keycloakAdminClient;
 
     @GetMapping
@@ -73,47 +72,25 @@ public class AuthEndpoint {
     @GetMapping("/login")
     @Transactional
     public void login(HttpServletResponse httpServletResponse, @RequestParam Map<String, String> request) {
-        var loginSession = new LoginSession(request.get("hash"),
-                                            request.get("id"),
-                                            request.get("username"),
-                                            request.get("photo_url"),
-                                            null,
-                                            null);
-
-        checkAuth(request);
-
-        loginSessionRepository.deleteAllByChatId(request.get("id"));
-        loginSessionRepository.save(loginSession);
-
-        httpServletResponse.setHeader("Location", constructLoginUri(loginSession.getStateToken()));
+        httpServletResponse.setHeader("Location", constructLoginUri(request));
         httpServletResponse.setStatus(302);
     }
 
     @GetMapping("/token")
-    public String token(Model model, @RequestParam String state, @RequestParam String code) {
-        var session = loginSessionRepository.findById(state).orElseThrow();
-        var token = keycloakClient.getToken(new AuthTokenRequest(code,
-                                                                 redirectUri + "/token",
-                                                                 client,
-                                                                 "authorization_code",
-                                                                 clientSecret));
+    public String token(Model model, @RequestParam Map<String, String> request) {
+        var tokenResponse = getTokenResponseAndInvalidateDedicatedSessions(request);
 
-        session.setToken(token.getAccess_token());
-        session.setRefreshToken(token.getRefresh_token());
-        loginSessionRepository.save(session);
+        checkAuth(request);
 
-        var userId = keycloakClient.getUserInfo("Bearer " + token.getAccess_token()).getSub();
-        keycloakAdminClient.getUserSessions(clientId).stream()
-                           .filter(userSession -> userSession.getUserId().equals(userId))
-                           .filter(userSession -> userSession.getClients().containsValue(client))
-                           .filter(userSession -> Objects.equals(userSession.getStart(), userSession.getLastAccess()))
-                           .map(UserSession::getId)
-                           .forEach(keycloakAdminClient::revokeUserSession);
+        var botUser = botUserRepository.findById(Long.parseLong(request.get("id"))).orElseThrow();
+        botUser.setUserId(tokenResponse.getUserId());
+        botUser.setRefreshToken(tokenResponse.getRefresh_token());
+        botUserRepository.save(botUser);
 
-        model.addAttribute("username", session.getUsername());
-        model.addAttribute("photo_url", session.getAvatarUrl());
-        model.addAttribute("token", token.getAccess_token());
-        model.addAttribute("userLink", "https://t.me/" + session.getUsername());
+        model.addAttribute("username", request.get("username"));
+        model.addAttribute("photo_url", request.get("photo_url"));
+        model.addAttribute("token", tokenResponse.getAccess_token());
+        model.addAttribute("userLink", "https://t.me/" + request.get("username"));
         model.addAttribute("logoutUri", constructLogoutUri());
         return "login.html";
     }
@@ -123,28 +100,23 @@ public class AuthEndpoint {
     public void complete(HttpServletRequest request) {
         var context = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
         var token = context.getToken();
-        var tokenString = context.getTokenString();
         if (!Objects.equals(token.getIssuedFor(), client)) {
             throw new RuntimeException();
         }
 
-        var session = loginSessionRepository.findLoginSessionByToken(tokenString);
-        Objects.requireNonNull(session);
+        var botUser = botUserRepository.findBotUserByUserId(token.getSubject()).orElseThrow();
 
         try {
             var educationAppUser = studentsClient.getUser(token.getSubject());
             Objects.requireNonNull(educationAppUser);
             Objects.requireNonNull(educationAppUser.getStudyGroupId());
 
-            var botUser = botUserRepository.findById(Long.parseLong(session.getChatId())).orElseThrow();
             botUser.setGroupId(educationAppUser.getStudyGroupId());
-            botUser.setRefreshToken(session.getRefreshToken());
             botUserRepository.save(botUser);
-            telegramBot.onLoginComplete(Long.parseLong(session.getChatId()), educationAppUser.getFirstName());
+
+            telegramBot.onLoginComplete(botUser.getChatId(), educationAppUser.getFirstName());
         } catch (Exception ignored) {
-            telegramBot.onLoginFail(Long.parseLong(session.getChatId()));
-        } finally {
-            loginSessionRepository.delete(session);
+            telegramBot.onLoginFail(botUser.getChatId());
         }
     }
 
@@ -155,16 +127,31 @@ public class AuthEndpoint {
         return modelAndView;
     }
 
-    private String constructLoginUri(String state) {
+    private String constructRedirectUri(Map<String, String> request) {
+        return redirectUri.concat("/token")
+                          .concat("?id=")
+                          .concat(request.get("id"))
+                          .concat("&first_name=")
+                          .concat(request.get("first_name"))
+                          .concat("&last_name=")
+                          .concat(request.get("last_name"))
+                          .concat("&username=")
+                          .concat(request.get("username"))
+                          .concat("&photo_url=")
+                          .concat(request.get("photo_url"))
+                          .concat("&auth_date=")
+                          .concat(request.get("auth_date"))
+                          .concat("&hash=")
+                          .concat(request.get("hash"));
+    }
+
+    private String constructLoginUri(Map<String, String> request) {
         return authUri.concat("?client_id=")
                       .concat(client)
                       .concat("&redirect_uri=")
-                      .concat(redirectUri)
-                      .concat("/token")
+                      .concat(URLEncoder.encode(constructRedirectUri(request), StandardCharsets.UTF_8))
                       .concat("&response_type=code")
-                      .concat("&scope=openid")
-                      .concat("&state=")
-                      .concat(state);
+                      .concat("&scope=openid");
     }
 
     private String constructLogoutUri() {
@@ -173,8 +160,30 @@ public class AuthEndpoint {
                         .concat("/close");
     }
 
+    private TokenResponse getTokenResponseAndInvalidateDedicatedSessions(Map<String, String> request) {
+        var redirect = constructRedirectUri(request);
+        var code = request.get("code");
+
+        var token = keycloakClient.getToken(new AuthTokenRequest(code,
+                                                                 redirect,
+                                                                 client,
+                                                                 "authorization_code",
+                                                                 clientSecret));
+        var userId = keycloakClient.getUserInfo("Bearer " + token.getAccess_token()).getSub();
+        keycloakAdminClient.getUserSessions(clientId).stream()
+                           .filter(userSession -> userSession.getUserId().equals(userId))
+                           .filter(userSession -> userSession.getClients().containsValue(client))
+                           .filter(userSession -> Objects.equals(userSession.getStart(), userSession.getLastAccess()))
+                           .map(UserSession::getId)
+                           .forEach(keycloakAdminClient::revokeUserSession);
+
+        token.setUserId(userId);
+        return token;
+    }
+
     @SneakyThrows
     private void checkAuth(@RequestBody Map<String, String> request) {
+        request.remove("code");
         String hash = request.get("hash");
         request.remove("hash");
 

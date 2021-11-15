@@ -14,7 +14,7 @@ public class UserSession {
     String id;
     String userId;
     Long start;
-    Long  lastAccess;
+    Long lastAccess;
     Map<String, String> clients;
 
 }

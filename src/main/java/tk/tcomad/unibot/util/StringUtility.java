@@ -26,16 +26,12 @@ public class StringUtility {
     private static final String CODE = "code";
     private static final String SCOPE = "scope";
     private static final String OPENID = "openid";
-    private static final String CLOSE_PATH = "/close";
     private static final String T_ME = "https://t.me/";
     private static final String USER_URL = "user_url";
-    private static final String LOGOUT_URL = "logout_url";
     private static final String TOKEN = "token";
 
     @Value("${spring.security.oauth2.client.provider.keycloak.authorization-uri}")
     private String authUri;
-    @Value("${user.logout.uri}")
-    private String logoutUri;
     @Value("${user.login.redirect.uri}")
     private String redirectUri;
     @Value("${keycloak.resource}")
@@ -73,16 +69,6 @@ public class StringUtility {
         model.addAttribute(PHOTO_URL, request.get(PHOTO_URL));
         model.addAttribute(TOKEN, accessToken);
         model.addAttribute(USER_URL, T_ME + request.get(USERNAME));
-        model.addAttribute(LOGOUT_URL, constructLogoutUri(request));
-    }
-
-    private String constructLogoutUri(Map<String, String> request) {
-        var params = new StringJoiner("&", "?", "")
-                .add(constructParam(REDIRECT_URI, URLEncoder.encode(constructLoginUri(request),
-                                                                    StandardCharsets.UTF_8)))
-                .toString();
-
-        return logoutUri.concat(params);
     }
 
     private String constructParam(String name, String value) {

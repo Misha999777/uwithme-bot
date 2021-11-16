@@ -22,11 +22,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
 import tk.tcomad.unibot.client.EducationAppClient;
-import tk.tcomad.unibot.client.KeycloakAdminClient;
 import tk.tcomad.unibot.client.KeycloakClient;
 import tk.tcomad.unibot.dto.keycloak.AuthTokenRequest;
 import tk.tcomad.unibot.dto.keycloak.TokenResponse;
-import tk.tcomad.unibot.dto.keycloak.UserSession;
 import tk.tcomad.unibot.repository.BotUserRepository;
 import tk.tcomad.unibot.telegram.TelegramBot;
 import tk.tcomad.unibot.util.SHA256Utility;
@@ -38,8 +36,6 @@ public class AuthEndpoint {
 
     @Value("${keycloak.resource}")
     private String client;
-    @Value("${resource.id}")
-    private String clientId;
     @Value("${keycloak.credentials.secret}")
     private String clientSecret;
     @Value("${education.app.frontend.uri}")
@@ -49,7 +45,6 @@ public class AuthEndpoint {
     private final TelegramBot telegramBot;
     private final KeycloakClient keycloakClient;
     private final EducationAppClient studentsClient;
-    private final KeycloakAdminClient keycloakAdminClient;
     private final StringUtility stringUtility;
     private final SHA256Utility sha256Utility;
 
@@ -122,13 +117,6 @@ public class AuthEndpoint {
                                                                  AUTHORIZATION_CODE,
                                                                  clientSecret));
         var userId = keycloakClient.getUserInfo(BEARER + " " + token.getAccess_token()).getSub();
-
-        keycloakAdminClient.getUserSessions(clientId).stream()
-                           .filter(userSession -> userSession.getUserId().equals(userId))
-                           .filter(userSession -> userSession.getClients().containsValue(client))
-                           .filter(userSession -> Objects.equals(userSession.getStart(), userSession.getLastAccess()))
-                           .map(UserSession::getId)
-                           .forEach(keycloakAdminClient::revokeUserSession);
 
         token.setUserId(userId);
         return token;

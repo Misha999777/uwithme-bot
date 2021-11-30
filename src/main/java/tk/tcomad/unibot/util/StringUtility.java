@@ -3,6 +3,7 @@ package tk.tcomad.unibot.util;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
 import java.util.StringJoiner;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -38,18 +39,20 @@ public class StringUtility {
     private String client;
 
     public String constructRedirectUri(Map<String, String> request) {
+
         var params = new StringJoiner("&", "?", "")
                 .add(constructParam(ID, request.get(ID)))
                 .add(constructParam(FIRST_NAME, request.get(FIRST_NAME)))
-                .add(constructParam(LAST_NAME, request.get(LAST_NAME)))
                 .add(constructParam(USERNAME, request.get(USERNAME)))
                 .add(constructParam(PHOTO_URL, request.get(PHOTO_URL)))
                 .add(constructParam(AUTH_DATE, request.get(AUTH_DATE)))
-                .add(constructParam(HASH, request.get(HASH)))
-                .toString();
+                .add(constructParam(HASH, request.get(HASH)));
 
+        Optional.ofNullable(request.get(LAST_NAME))
+                .ifPresent(lastName -> params.add(constructParam(LAST_NAME, lastName)));
+        
         return redirectUri.concat(TOKEN_PATH)
-                          .concat(params);
+                          .concat(params.toString());
     }
 
     public String constructLoginUri(Map<String, String> request) {

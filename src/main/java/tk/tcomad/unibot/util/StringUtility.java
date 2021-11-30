@@ -44,13 +44,14 @@ public class StringUtility {
                 .add(constructParam(ID, request.get(ID)))
                 .add(constructParam(FIRST_NAME, request.get(FIRST_NAME)))
                 .add(constructParam(USERNAME, request.get(USERNAME)))
-                .add(constructParam(PHOTO_URL, request.get(PHOTO_URL)))
                 .add(constructParam(AUTH_DATE, request.get(AUTH_DATE)))
                 .add(constructParam(HASH, request.get(HASH)));
 
         Optional.ofNullable(request.get(LAST_NAME))
                 .ifPresent(lastName -> params.add(constructParam(LAST_NAME, lastName)));
-        
+        Optional.ofNullable(request.get(PHOTO_URL))
+                .ifPresent(photoUrl -> params.add(constructParam(PHOTO_URL, photoUrl)));
+
         return redirectUri.concat(TOKEN_PATH)
                           .concat(params.toString());
     }

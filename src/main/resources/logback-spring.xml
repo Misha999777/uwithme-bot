@@ -33,8 +33,6 @@
         <appender-ref ref="FILE"/>
     </appender>
 
-    <logger name="org.telegram.abilitybots.api" level="ERROR"/>
-
     <root level="INFO">
         <appender-ref ref="ASYNC"/>
         <appender-ref ref="CONSOLE"/>

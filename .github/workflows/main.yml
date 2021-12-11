@@ -21,8 +21,8 @@ jobs:
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: UniBot
-          path: ./target/UniBot.jar
+          name: UWMBot
+          path: ./target/UWMBot.jar
           retention-days: 1
   deploy:
     needs: build-archive
@@ -33,8 +33,8 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v2
         with:
-          name: UniBot
-          path: ./UniBot
+          name: UWMBot
+          path: ./UWMBot
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2
         with:

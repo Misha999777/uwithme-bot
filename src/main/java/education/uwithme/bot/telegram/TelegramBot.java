@@ -36,6 +36,7 @@ import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.LoginUrl;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -365,6 +366,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private Long getChatId(Update update) {
-        return update.getMessage().getChatId();
+        Message message = Optional.ofNullable(update.getMessage())
+                                  .orElse(update.getCallbackQuery().getMessage());
+
+        return message.getChatId();
     }
 }

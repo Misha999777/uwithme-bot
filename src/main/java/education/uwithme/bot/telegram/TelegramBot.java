@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
@@ -89,7 +90,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         Optional.ofNullable(update.getCallbackQuery())
-                .ifPresentOrElse(callbackQuery -> processCallback(getChatId(update), callbackQuery.getData()),
+                .ifPresentOrElse(callbackQuery -> processCallback(getChatId(update), callbackQuery),
                                  () -> Optional.ofNullable(update.getMessage())
                                                .filter(message -> Objects.equals(message.getText(), "/start"))
                                                .map(Message::getChatId)
@@ -110,7 +111,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendLogout(chatId);
     }
 
-    private void processCallback(long chatId, String payload) {
+    private void processCallback(long chatId, CallbackQuery query) {
+        AnswerCallbackQuery answer = AnswerCallbackQuery.builder()
+                                                        .callbackQueryId(query.getId())
+                                                        .build();
+        executeSilent(answer);
+        String payload = query.getData();
+
         var groupId = botUserRepository.findById(chatId).map(BotUser::getGroupId).orElse(null);
         if (Objects.isNull(groupId)) {
             sendWelcome(chatId);
@@ -346,6 +353,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             log.error("Cant send message {}. Exception: {}", method, e);
             return null;
+        }
+    }
+
+    private void executeSilent(AnswerCallbackQuery method) {
+        try {
+            this.execute(method);
+        } catch (TelegramApiException e) {
+            log.error("Cant answer callback {}. Exception: {}", method, e);
         }
     }
 

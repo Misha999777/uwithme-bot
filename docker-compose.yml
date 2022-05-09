@@ -1,0 +1,14 @@
+version: '3.5'
+
+services:
+  keycloak:
+    image: jboss/keycloak
+    volumes:
+      - ./keycloak-config:/opt/uwm
+    command:
+      - "-b 0.0.0.0 -Dkeycloak.import=/opt/uwm/realm-export.json -Dkeycloak.profile.feature.upload_scripts=enabled"
+    environment:
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+    ports:
+      - "8080:8080"

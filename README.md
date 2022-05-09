@@ -16,13 +16,13 @@ For building and running the application you need:
 
 ## Running the application locally
 
-There are several ways to run a Spring Boot application on your local machine. One way is to execute the `main` method in the `Main` class from your IDE.
+You can run this application by
 
-Alternatively you can use the [Spring Boot Maven plugin](https://docs.spring.io/spring-boot/docs/current/reference/html/build-tool-plugins-maven-plugin.html) like so:
-
+- Starting required containers with
 ```shell
-mvn spring-boot:run
+docker-compose up
 ```
+- Then you can start it as a Spring Boot application
 
 ## Copyright
 

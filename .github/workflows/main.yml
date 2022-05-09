@@ -14,14 +14,16 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Grant execute permission for mvnw
-        run: chmod +x mvnw
-      - name: Package with Mavwn
-        run: ./mvnw package
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4.3
+        with:
+          maven-version: 3.8.2
+      - name: Package with Maven
+        run: mvn package
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: UWMBot
+          name: TestSystem
           path: ./target/UWMBot.jar
           retention-days: 1
   deploy:
@@ -33,14 +35,14 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v2
         with:
-          name: UWMBot
-          path: ./UWMBot
+          name: TestSystem
+          path: ./TestSystem
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_KEY }}
           known_hosts: ${{ secrets.KNOWN_HOSTS }}
-      - name: Grant execute permission for deploy script
-        run: chmod +x ./deploy.sh
-      - name: Deploy
-        run: ./deploy.sh
+      - name: Upload
+        run: rsync -crlOt ./TestSystem/TestSystem.jar root@109.87.198.211:/home/misha/testsystem/TestSystem.jar
+      - name: Restart
+        run: root@109.87.198.211 service testsystem restart

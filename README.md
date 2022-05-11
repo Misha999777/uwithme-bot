@@ -9,7 +9,7 @@ University With Me Bot is a system for everyone to acess data from the [Universi
 
 ## Requirements
 
-To run this project you must firstly run:
+To run this project you should firstly run:
 
 - [Docker files](https://github.com/HappyMary16/uwithme-docker-files)
 - [University With Me Server](https://github.com/HappyMary16/uwithme-server)

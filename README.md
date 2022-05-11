@@ -13,16 +13,17 @@ For building and running the application you need:
 
 - [JDK 11](https://openjdk.java.net/projects/jdk/11/)
 - [Maven 3](https://maven.apache.org)
+- [Docker](https://www.docker.com/)
 
 ## Running the application locally
 
 You can run this application by
-
-- Starting required containers with
+- Downloading [Docker files](https://github.com/HappyMary16/uwithme-docker-files)
+- Starting them with
 ```shell
 docker-compose up
 ```
-- Then you can start it as a Spring Boot application
+- Starting the project as a Spring Boot application
 
 ## Copyright
 

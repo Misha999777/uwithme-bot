@@ -9,22 +9,18 @@ University With Me Bot is a system for everyone to acess data from the [Universi
 
 ## Requirements
 
-For building and running the application you need:
+To run this project you must firstly run:
 
-- [JDK 11](https://openjdk.java.net/projects/jdk/11/)
-- [Maven 3](https://maven.apache.org)
-- [Docker](https://www.docker.com/)
+- [Docker files](https://github.com/HappyMary16/uwithme-docker-files)
+- [University With Me Server](https://github.com/HappyMary16/uwithme-server)
+- [University With Me Client](https://github.com/HappyMary16/uwithme-client)
 
 ## Running the application locally
 
-You can run this application by
-1. Downloading [Docker files](https://github.com/HappyMary16/uwithme-docker-files)
-2. Starting them with
+You can run this application by:
 ```shell
-docker-compose up
+mvn spring-boot:run
 ```
-3. Downloading and starting [University With Me Server](https://github.com/HappyMary16/uwithme-server)
-4. Starting the project as a Spring Boot application
 
 ## Copyright
 

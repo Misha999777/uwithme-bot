@@ -25,8 +25,6 @@ import education.uwithme.bot.entity.BotUser;
 import education.uwithme.bot.repository.BotUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.extern.java.Log;
-import lombok.extern.jbosslog.JBossLog;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -57,7 +55,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String name;
     @Value("${bot.firstWeekStart:#{null}}")
     private String firstWeekStart;
-    @Value("${user.login.redirect.uri}")
+    @Value("${server.host}:${server.port}")
     private String redirectUri;
 
     private static final String WRONG_COMMAND_MESSAGE = "Неверная команда";

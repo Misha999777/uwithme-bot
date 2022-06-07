@@ -33,7 +33,7 @@ public class StringUtility {
 
     @Value("${spring.security.oauth2.client.provider.keycloak.authorization-uri}")
     private String authUri;
-    @Value("${user.login.redirect.uri}")
+    @Value("${server.host}:${server.port}")
     private String redirectUri;
     @Value("${keycloak.resource}")
     private String client;

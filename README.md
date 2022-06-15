@@ -13,7 +13,6 @@ To run this project you should firstly run:
 
 - [Docker files](https://github.com/HappyMary16/uwithme-docker-files)
 - [University With Me Server](https://github.com/HappyMary16/uwithme-server)
-- [University With Me Client](https://github.com/HappyMary16/uwithme-client)
 
 ## Running the application locally
 
@@ -21,6 +20,9 @@ You can run this application by:
 ```shell
 mvn spring-boot:run
 ```
+
+Then you can [Login to Telegram Testing Enviroment](https://core.telegram.org/bots/webapps#testing-web-apps)
+and speek to [Misha999777_bot](https://t.me/Misha999777_bot)
 
 ## Copyright
 

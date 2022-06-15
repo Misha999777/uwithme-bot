@@ -21,8 +21,7 @@ public class BotUser implements Serializable {
 
     @Id
     private Long chatId;
+    private Long groupId;
     @ElementCollection(fetch = FetchType.EAGER)
     private List<Integer> loginMessageIds = new ArrayList<>();
-    private String userId;
-    private Long groupId;
 }

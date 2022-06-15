@@ -13,5 +13,4 @@ public class TelegramConfig {
     public TelegramBotsApi telegramBotsApi() throws TelegramApiException {
         return new TelegramBotsApi(DefaultBotSession.class);
     }
-
 }

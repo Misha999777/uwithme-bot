@@ -13,7 +13,7 @@ import education.uwithme.bot.dto.educationapp.LessonApi;
 import education.uwithme.bot.dto.educationapp.UserApi;
 
 @FeignClient(name = "KeycloakClient1",
-        url = "${education.app.server.uri}",
+        url = "${education-app.server.uri}",
         configuration = OauthClientConfig.class)
 public interface EducationAppClient {
 

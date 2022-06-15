@@ -1,68 +1,15 @@
-<html lang="ru" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<html lang="ru">
 <head>
-    <meta charset="utf-8">
-    <title>Авторизация Telegram</title>
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="format-detection" content="telephone=no">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="MobileOptimized" content="176">
-    <meta name="HandheldFriendly" content="True">
-    <meta name="robots" content="noindex, nofollow">
+    <title>Авторизация</title>
 
-    <link href="https://fonts.googleapis.com/css?family=Roboto:400,500" rel="stylesheet" type="text/css">
-    <link href="https://telegram.org/css/bootstrap.min.css?3" rel="stylesheet">
-    <link href="https://telegram.org/css/bootstrap-extra.css?2" rel="stylesheet">
-    <link href="https://telegram.org/css/telegram.css?214" rel="stylesheet">
-    <link href="https://oauth.telegram.org/css/oauth.css?14" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
-<body class="">
-<main class="login">
-    <section class="login_content" id="login-container">
-        <div class="login_photos">
-            <span class="login_telegram_photo_wrap arrowed">
-                <a th:href="${user_url}" target="_blank">
-                    <img th:src="${photo_url}" class="login_user_photo" />
-                </a>
-            </span>
-            <a href="https://u-with-me.education" target="_blank">
-                <img style="background: white" class="login_bot_photo" src="https://u-with-me.education/logo512.png" />
-            </a>
-        </div>
-        <div class="login_header_text">
-            Нажмите далее, чтобы привязать Telegram аккаунт
-            <br>
-            <a th:text="${username}" th:href="${user_url}" class="bot_name" dir="auto" target="_blank"></a>
-            к вашему аккаунту
-            <a class="bot_name" dir="auto" href="https://u-with-me.education" target="_blank">University With Me</a>
-        </div>
-        <div class="login_button_wrap">
-            <button class="button-item button-item-flat ripple-handler" onclick="loginCancel()"
-                    type="button">
-                <span class="button-item-label">Отмена</span>
-                <span class="ripple-mask"><span class="ripple"></span></span>
-            </button>
-            <button class="button-item ripple-handler" type="button" onclick="loginConfirm()">
-                <span class="button-item-label">Далее</span>
-                <span class="ripple-mask"><span class="ripple"></span></span>
-            </button>
-        </div>
-    </section>
-</main>
-
-<script th:inline="javascript">
-    function loginCancel() {
-        window.location.href = "/close";
-    }
-
-    function loginConfirm() {
-        let xmlHttp = new XMLHttpRequest();
-        xmlHttp.open("GET", "complete", true);
-        xmlHttp.setRequestHeader("Authorization", "Bearer " + [[${token}]])
-        xmlHttp.send(null);
-        window.location.href = '/close';
-    }
-</script>
+<body>
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+            window.Telegram.WebApp.sendData([[${token}]]);
+        })
+    </script>
 </body>
 </html>

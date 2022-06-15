@@ -23,6 +23,7 @@ import education.uwithme.bot.dto.educationapp.BotData;
 import education.uwithme.bot.dto.educationapp.LessonApi;
 import education.uwithme.bot.entity.BotUser;
 import education.uwithme.bot.repository.BotUserRepository;
+import education.uwithme.bot.util.AuthUtility;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -37,11 +38,15 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.LoginUrl;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
+import org.telegram.telegrambots.meta.api.objects.webapp.WebAppData;
+import org.telegram.telegrambots.meta.api.objects.webapp.WebAppInfo;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Component
@@ -55,8 +60,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String name;
     @Value("${bot.firstWeekStart:#{null}}")
     private String firstWeekStart;
-    @Value("${server.host}:${server.port}")
-    private String redirectUri;
 
     private static final String WRONG_COMMAND_MESSAGE = "Неверная команда";
     private static final String NO_ELEMENTS_MESSAGE = "Данные отсутствуют";
@@ -67,6 +70,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private final TelegramBotsApi telegramBotsApi;
     private final BotUserRepository botUserRepository;
+    private final AuthUtility authUtility;
     private final EducationAppClient studentsClient;
 
     @PostConstruct
@@ -88,25 +92,41 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         Optional.ofNullable(update.getCallbackQuery())
-                .ifPresentOrElse(callbackQuery -> processCallback(getChatId(update), callbackQuery),
-                                 () -> Optional.ofNullable(update.getMessage())
-                                               .filter(message -> Objects.equals(message.getText(), "/start"))
-                                               .map(Message::getChatId)
-                                               .ifPresentOrElse(this::sendWelcome,
-                                                                () -> sendMessageWithText(getChatId(update),
-                                                                                          WRONG_COMMAND_MESSAGE)));
+                .ifPresent(callbackQuery -> processCallback(getChatId(update), callbackQuery));
+
+        Optional.ofNullable(update.getMessage())
+                .filter(message -> Objects.nonNull(message.getWebAppData()))
+                .ifPresent(message -> onLoginComplete(getChatId(update), message.getWebAppData()));
+
+        Optional.ofNullable(update.getMessage())
+                .filter(message -> Objects.equals(message.getText(), "/start"))
+                .map(Message::getChatId)
+                .ifPresentOrElse(this::sendWelcome,
+                                 () -> sendMessageWithText(getChatId(update),
+                                                           WRONG_COMMAND_MESSAGE));
     }
 
-    public void onLoginComplete(Long chatId, String userName) {
-        deleteLoginMessages(chatId);
-        sendMessageWithText(chatId, WELCOME_MESSAGE + " " + userName);
-        sendMenu(chatId);
-    }
+    public void onLoginComplete(Long chatId, WebAppData webAppData) {
+        var token = authUtility.getToken(webAppData.getData());
 
-    public void onLoginFail(Long chatId) {
-        deleteLoginMessages(chatId);
-        sendMessageWithText(chatId, FAIL_MESSAGE);
-        sendLogout(chatId);
+        var botUser = botUserRepository.findById(chatId).orElseThrow();
+
+        try {
+            var educationAppUser = studentsClient.getUser(token.getUserId());
+            Objects.requireNonNull(educationAppUser);
+            Objects.requireNonNull(educationAppUser.getStudyGroupId());
+
+            botUser.setGroupId(educationAppUser.getStudyGroupId());
+            botUserRepository.save(botUser);
+
+            deleteLoginMessages(chatId);
+            sendMessageWithText(chatId, WELCOME_MESSAGE + " " + educationAppUser.getFirstName());
+            sendMenu(chatId);
+        } catch (Exception ignored) {
+            deleteLoginMessages(chatId);
+            sendMessageWithText(chatId, FAIL_MESSAGE);
+            sendLogout(chatId);
+        }
     }
 
     private void processCallback(long chatId, CallbackQuery query) {
@@ -190,7 +210,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 break;
             case LECTURE:
             case TASK:
-                sendFile(chatId, new InputFile(studentsClient.getFile(Long.parseLong(id)).body().asInputStream(), id));
+                try (var body = studentsClient.getFile(Long.parseLong(id)).body()){
+                    sendFile(chatId, new InputFile(body.asInputStream(), id));
+                }
                 break;
         }
     }
@@ -198,17 +220,23 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void sendWelcome(Long chatId) {
         var groupId = botUserRepository.findById(chatId).map(BotUser::getGroupId).orElse(null);
         if (Objects.isNull(groupId)) {
-            List<List<InlineKeyboardButton>> keyboard =
-                    List.of(List.of(InlineKeyboardButton.builder()
-                                            .text(AUTHORIZE_BUTTON_NAME)
-                                            .loginUrl(LoginUrl.builder()
-                                                              .url(redirectUri + "/login")
-                                                              .build())
-                                            .build()));
-            InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder()
-                                                              .keyboard(keyboard)
-                                                              .build();
-            var loginMessageId = sendMessageWithMarkup(chatId, "Пожалуйста, авторизируйтесь", markup);
+            var keyButton = KeyboardButton.builder()
+                                          .text(AUTHORIZE_BUTTON_NAME)
+                                          .webApp(WebAppInfo.builder()
+                                                            .url(authUtility.constructLoginUri())
+                                                            .build())
+                                          .build();
+            var keyboard = List.of(new KeyboardRow(List.of(keyButton)));
+            var markup = ReplyKeyboardMarkup.builder()
+                                            .keyboard(keyboard)
+                                            .resizeKeyboard(true)
+                                            .build();
+            var message = SendMessage.builder()
+                                     .chatId(chatId.toString())
+                                     .text("Пожалуйста, авторизируйтесь")
+                                     .replyMarkup(markup)
+                                     .build();
+            var loginMessageId = executeSilent(message);
 
             var botUser = botUserRepository.findById(chatId)
                                            .orElse(new BotUser());
@@ -254,14 +282,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                                                           .keyboard(keyboard)
                                                           .build();
 
-        sendMessageWithMarkup(chatId, SELECT_MESSAGE, markup);
+        sendMessageWithMarkup(chatId, markup);
     }
 
     private void sendList(Long chatId, List<? extends BotData> list) {
         if (list.isEmpty()) {
             sendMessageWithText(chatId, NO_ELEMENTS_MESSAGE);
         } else {
-            sendMessageWithMarkup(chatId, TelegramBot.SELECT_MESSAGE, createMarkup(list));
+            sendMessageWithMarkup(chatId, createMarkup(list));
         }
     }
 
@@ -284,13 +312,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         executeSilent(message);
     }
 
-    private Integer sendMessageWithMarkup(Long chatId, String text, InlineKeyboardMarkup markup) {
+    private void sendMessageWithMarkup(Long chatId, InlineKeyboardMarkup markup) {
         SendMessage message = SendMessage.builder()
                                          .chatId(chatId.toString())
-                                         .text(text)
+                                         .text(TelegramBot.SELECT_MESSAGE)
                                          .replyMarkup(markup)
                                          .build();
-        return executeSilent(message);
+        executeSilent(message);
     }
 
     private void deleteLoginMessages(Long chatId) {
@@ -380,7 +408,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private Long getChatId(Update update) {
         Message message = Optional.ofNullable(update.getMessage())
-                                  .orElse(update.getCallbackQuery().getMessage());
+                                  .orElseGet((() -> update.getCallbackQuery().getMessage()));
 
         return message.getChatId();
     }

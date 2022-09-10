@@ -12,22 +12,22 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.0</version>
+        <version>2.7.3</version>
         <relativePath/>
     </parent>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <lombok.version>1.18.24</lombok.version>
-        <telegrambots.version>6.0.1</telegrambots.version>
-        <postgresql.version>42.3.6</postgresql.version>
+        <telegrambots.version>6.1.0</telegrambots.version>
+        <postgresql.version>42.5.0</postgresql.version>
         <spring-cloud-starter-openfeign.version>3.1.3</spring-cloud-starter-openfeign.version>
         <feign-form.version>3.8.0</feign-form.version>
-        <keycloak.version>18.0.0</keycloak.version>
+        <keycloak.version>19.0.1</keycloak.version>
     </properties>
 
     <dependencies>

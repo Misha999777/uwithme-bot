@@ -61,7 +61,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Value("${bot.firstWeekStart:#{null}}")
     private String firstWeekStart;
 
-    private static final String WRONG_COMMAND_MESSAGE = "Неверная команда";
     private static final String NO_ELEMENTS_MESSAGE = "Данные отсутствуют";
     private static final String SELECT_MESSAGE = "Выберите для подробностей";
     private static final String AUTHORIZE_BUTTON_NAME = "Авторизироваться";
@@ -101,9 +100,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         Optional.ofNullable(update.getMessage())
                 .filter(message -> Objects.equals(message.getText(), "/start"))
                 .map(Message::getChatId)
-                .ifPresentOrElse(this::sendWelcome,
-                                 () -> sendMessageWithText(getChatId(update),
-                                                           WRONG_COMMAND_MESSAGE));
+                .ifPresent(this::sendWelcome);
     }
 
     public void onLoginComplete(Long chatId, WebAppData webAppData) {
@@ -125,33 +122,40 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (Exception ignored) {
             deleteLoginMessages(chatId);
             sendMessageWithText(chatId, FAIL_MESSAGE);
-            sendLogout(chatId);
+            sendWelcome(chatId);
         }
     }
 
     private void processCallback(long chatId, CallbackQuery query) {
-        AnswerCallbackQuery answer = AnswerCallbackQuery.builder()
-                                                        .callbackQueryId(query.getId())
-                                                        .build();
-        executeSilent(answer);
-        String payload = query.getData();
-
-        var groupId = botUserRepository.findById(chatId).map(BotUser::getGroupId).orElse(null);
+        var groupId = botUserRepository.findById(chatId)
+                                       .map(BotUser::getGroupId)
+                                       .orElse(null);
         if (Objects.isNull(groupId)) {
             sendWelcome(chatId);
             return;
         }
-        Optional<Command> optionalCommand = Command.fromMessage(payload);
-        if (optionalCommand.isPresent()) {
-            processCommand(chatId, optionalCommand.get());
-        } else {
-            String[] splitted = payload.split(" ");
-            String callbackText = splitted[0];
-            String id = splitted[1];
-            Optional<Callback> optionalCallback = Callback.fromCallbackText(callbackText);
-            optionalCallback.ifPresentOrElse(callback -> processDetail(chatId, id, callback),
-                                             () -> sendMessageWithText(chatId, WRONG_COMMAND_MESSAGE));
+
+        answerQuery(query);
+
+        String payload = query.getData();
+        Optional<Command> command = Command.fromMessage(payload);
+
+        if (command.isPresent()) {
+            processCommand(chatId, command.get());
+            return;
         }
+
+        String[] parts = payload.split(" ");
+        Optional<Callback> optionalCallback = Callback.fromCallbackText(parts[0]);
+        optionalCallback.ifPresent(callback -> processDetail(chatId, parts[1], callback));
+    }
+
+    private void answerQuery(CallbackQuery query) {
+        AnswerCallbackQuery answer = AnswerCallbackQuery.builder()
+                                                        .callbackQueryId(query.getId())
+                                                        .build();
+
+        executeSilent(answer);
     }
 
     private void processCommand(Long chatId, Command payload) {
@@ -162,6 +166,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                                                  .collect(LinkedHashMap::new,
                                                           (map, item) -> map.put(item.getFirst(), item.getSecond()),
                                                           Map::putAll);
+
                 sendMap(chatId, days);
                 break;
             case STUDENTS:
@@ -182,11 +187,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                 break;
             case EXIT:
                 var botUser = botUserRepository.findById(chatId);
+
                 if (botUser.isPresent()) {
                     botUserRepository.deleteById(chatId);
                 }
+
                 sendWelcome(chatId);
-                break;
         }
     }
 
@@ -213,12 +219,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 try (var body = studentsClient.getFile(Long.parseLong(id)).body()){
                     sendFile(chatId, new InputFile(body.asInputStream(), id));
                 }
-                break;
         }
     }
 
     private void sendWelcome(Long chatId) {
-        var groupId = botUserRepository.findById(chatId).map(BotUser::getGroupId).orElse(null);
+        var groupId = botUserRepository.findById(chatId)
+                                       .map(BotUser::getGroupId)
+                                       .orElse(null);
+
         if (Objects.isNull(groupId)) {
             var keyButton = KeyboardButton.builder()
                                           .text(AUTHORIZE_BUTTON_NAME)
@@ -231,6 +239,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                                             .keyboard(keyboard)
                                             .resizeKeyboard(true)
                                             .build();
+
             var message = SendMessage.builder()
                                      .chatId(chatId.toString())
                                      .text("Пожалуйста, авторизируйтесь")
@@ -240,8 +249,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             var botUser = botUserRepository.findById(chatId)
                                            .orElse(new BotUser());
+
             botUser.getLoginMessageIds().add(loginMessageId);
             botUser.setChatId(chatId);
+
             botUserRepository.save(botUser);
         } else {
             sendMenu(chatId);
@@ -258,19 +269,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMap(chatId, commands);
     }
 
-    private void sendLogout(Long chatId) {
-        Map<String, String> commands = Arrays.stream(Command.values())
-                                             .filter(Command.EXIT::equals)
-                                             .map(Command::getMessage)
-                                             .collect(LinkedHashMap::new,
-                                                      (map, item) -> map.put(item.getFirst(), item.getSecond()),
-                                                      Map::putAll);
-
-        sendMap(chatId, commands);
-    }
-
     private void sendMap(Long chatId, Map<String, String> map) {
         final AtomicInteger counter = new AtomicInteger();
+
         var keyboard = new ArrayList<>(map.entrySet().stream()
                                           .map(command -> InlineKeyboardButton.builder()
                                                                               .text(command.getKey())
@@ -278,6 +279,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                                                                               .build())
                                           .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / 2))
                                           .values());
+
         InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder()
                                                           .keyboard(keyboard)
                                                           .build();
@@ -287,7 +289,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void sendList(Long chatId, List<? extends BotData> list) {
         if (list.isEmpty()) {
-            sendMessageWithText(chatId, NO_ELEMENTS_MESSAGE);
+            sendMessageWithText(chatId, null);
         } else {
             sendMessageWithMarkup(chatId, createMarkup(list));
         }
@@ -295,12 +297,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void sendMessageWithText(Long chatId, String info) {
         if (!StringUtils.hasText(info)) {
-                info = NO_ELEMENTS_MESSAGE;
+            info = NO_ELEMENTS_MESSAGE;
         }
+
         SendMessage message = SendMessage.builder()
                                          .chatId(chatId.toString())
                                          .text(info)
                                          .build();
+
         executeSilent(message);
     }
 
@@ -309,6 +313,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                                            .chatId(chatId.toString())
                                            .document(file)
                                            .build();
+
         executeSilent(message);
     }
 
@@ -318,22 +323,28 @@ public class TelegramBot extends TelegramLongPollingBot {
                                          .text(TelegramBot.SELECT_MESSAGE)
                                          .replyMarkup(markup)
                                          .build();
+
         executeSilent(message);
     }
 
     private void deleteLoginMessages(Long chatId) {
         var botUser = botUserRepository.findById(chatId).orElseThrow();
+
         botUser.getLoginMessageIds().stream()
                .map(messageId -> buildDeleteMessage(chatId, messageId))
                .forEach(this::executeSilent);
+
         botUser.getLoginMessageIds().clear();
+
         botUserRepository.save(botUser);
     }
 
     private DeleteMessage buildDeleteMessage(Long chatId, Integer messageId) {
         DeleteMessage deleteMessage = new DeleteMessage();
+
         deleteMessage.setChatId(chatId.toString());
         deleteMessage.setMessageId(messageId);
+
         return deleteMessage;
     }
 

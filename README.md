@@ -22,7 +22,7 @@ mvn spring-boot:run
 ```
 
 Then you can [Log in to Telegram Testing Environment](https://core.telegram.org/bots/webapps#testing-web-apps)
-and speak to [Misha999777_bot](https://t.me/Misha999777_bot)
+and speak to [@UniversityWithMe_bot](https://t.me/UniversityWithMe_bot)
 
 ## Copyright
 

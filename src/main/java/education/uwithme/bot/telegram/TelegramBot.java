@@ -61,11 +61,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Value("${bot.firstWeekStart:#{null}}")
     private String firstWeekStart;
 
-    private static final String NO_ELEMENTS_MESSAGE = "Данные отсутствуют";
-    private static final String SELECT_MESSAGE = "Выберите для подробностей";
-    private static final String AUTHORIZE_BUTTON_NAME = "Авторизироваться";
-    private static final String WELCOME_MESSAGE = "Добро пожаловать";
-    private static final String FAIL_MESSAGE = "Вы не являетесь студентом группы";
+    private static final String NO_ELEMENTS_MESSAGE = "Дані відсутні";
+    private static final String SELECT_MESSAGE = "Оберіть для подробець";
+    private static final String AUTHORIZE_BUTTON_NAME = "Авторизуватися";
+    private static final String WELCOME_MESSAGE = "Вітаємо";
+    private static final String FAIL_MESSAGE = "Ви не є студентом групи";
 
     private final TelegramBotsApi telegramBotsApi;
     private final BotUserRepository botUserRepository;

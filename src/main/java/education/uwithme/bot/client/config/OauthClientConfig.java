@@ -3,8 +3,6 @@ package education.uwithme.bot.client.config;
 import static org.springframework.cloud.openfeign.security.OAuth2FeignRequestInterceptor.BEARER;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
-import java.util.StringJoiner;
-
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import org.keycloak.admin.client.Keycloak;
@@ -19,9 +17,9 @@ public class OauthClientConfig {
     }
 
     private void setAuthHeader(RequestTemplate requestTemplate, TokenManager tokenManager) {
-        var headerValue = new StringJoiner(" ").add(BEARER)
-                                               .add(tokenManager.getAccessTokenString())
-                                               .toString();
+        var accessToken = tokenManager.getAccessTokenString();
+        var headerValue = String.format("%s %s", BEARER, accessToken);
+
         requestTemplate.header(AUTHORIZATION, headerValue);
     }
 }

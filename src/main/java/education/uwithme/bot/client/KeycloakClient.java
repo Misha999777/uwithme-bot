@@ -1,11 +1,11 @@
 package education.uwithme.bot.client;
 
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+
 import education.uwithme.bot.client.config.KeycloakClientConfig;
 import education.uwithme.bot.dto.keycloak.AuthTokenRequest;
 import education.uwithme.bot.dto.keycloak.TokenResponse;
 import education.uwithme.bot.dto.keycloak.UserInfoResponse;
-import feign.Headers;
-import feign.Param;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,5 +22,5 @@ public interface KeycloakClient {
     TokenResponse getToken(@RequestBody AuthTokenRequest request);
 
     @GetMapping(value = "/userinfo")
-    UserInfoResponse getUserInfo(@RequestHeader(value = "Authorization") String authorizationHeader);
+    UserInfoResponse getUserInfo(@RequestHeader(AUTHORIZATION) String authorizationHeader);
 }

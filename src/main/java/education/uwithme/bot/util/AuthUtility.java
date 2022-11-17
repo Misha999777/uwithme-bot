@@ -63,11 +63,9 @@ public class AuthUtility {
         var accessToken = keycloakClient.getToken(request)
                                         .getAccess_token();
 
-        var header = new StringJoiner(" ").add(BEARER)
-                                          .add(accessToken)
-                                          .toString();
+        var headerValue = String.format("%s %s", BEARER, accessToken);
 
-        return keycloakClient.getUserInfo(header);
+        return keycloakClient.getUserInfo(headerValue);
     }
 
     private String constructRedirectUri() {

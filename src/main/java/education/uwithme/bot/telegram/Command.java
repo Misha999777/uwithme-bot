@@ -11,12 +11,12 @@ import org.springframework.data.util.Pair;
 @AllArgsConstructor
 public enum Command {
 
-    TIMETABLE(Pair.of("Расписание", "/gettimetable")),
-    STUDENTS(Pair.of("Студенты", "/getstudents")),
-    TEACHERS(Pair.of("Преподаватели", "/getteachers")),
-    LECTURES(Pair.of("Лекции", "/getlectures")),
-    TASKS(Pair.of("Задания", "/gettasks")),
-    EXIT(Pair.of("Выйти", "/exit"));
+    TIMETABLE(Pair.of("Розклад", "/gettimetable")),
+    STUDENTS(Pair.of("Студенти", "/getstudents")),
+    TEACHERS(Pair.of("Викладачі", "/getteachers")),
+    LECTURES(Pair.of("Лекції", "/getlectures")),
+    TASKS(Pair.of("Завдання", "/gettasks")),
+    EXIT(Pair.of("Вийти", "/exit"));
 
     private final Pair<String, String> message;
 

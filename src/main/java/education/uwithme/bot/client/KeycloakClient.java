@@ -10,6 +10,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 @FeignClient(name = "KeycloakClient",
         url = "${keycloak.auth-server-url}/realms/${keycloak.realm}/protocol/openid-connect",
@@ -21,6 +22,5 @@ public interface KeycloakClient {
     TokenResponse getToken(@RequestBody AuthTokenRequest request);
 
     @GetMapping(value = "/userinfo")
-    @Headers("Authorization: Bearer {token}")
-    UserInfoResponse getUserInfo(@Param("token") String token);
+    UserInfoResponse getUserInfo(@RequestHeader(value = "Authorization") String authorizationHeader);
 }

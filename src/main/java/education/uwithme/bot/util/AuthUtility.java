@@ -2,6 +2,7 @@ package education.uwithme.bot.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
+import static org.springframework.cloud.openfeign.security.OAuth2FeignRequestInterceptor.BEARER;
 
 import java.net.URLEncoder;
 import java.util.StringJoiner;
@@ -62,7 +63,11 @@ public class AuthUtility {
         var accessToken = keycloakClient.getToken(request)
                                         .getAccess_token();
 
-        return keycloakClient.getUserInfo(accessToken);
+        var header = new StringJoiner(" ").add(BEARER)
+                                          .add(accessToken)
+                                          .toString();
+
+        return keycloakClient.getUserInfo(header);
     }
 
     private String constructRedirectUri() {

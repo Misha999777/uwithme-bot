@@ -109,6 +109,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         var botUser = botUserRepository.findById(chatId).orElseThrow();
 
         try {
+            log.info("Logging in user {}", token);
+
             var educationAppUser = studentsClient.getUser(token.getUserId());
             Objects.requireNonNull(educationAppUser);
             Objects.requireNonNull(educationAppUser.getStudyGroupId());

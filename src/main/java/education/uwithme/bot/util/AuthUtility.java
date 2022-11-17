@@ -8,7 +8,7 @@ import java.util.StringJoiner;
 
 import education.uwithme.bot.client.KeycloakClient;
 import education.uwithme.bot.dto.keycloak.AuthTokenRequest;
-import education.uwithme.bot.dto.keycloak.TokenResponse;
+import education.uwithme.bot.dto.keycloak.UserInfoResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,12 +55,14 @@ public class AuthUtility {
         model.addAttribute(TOKEN, accessToken);
     }
 
-    public TokenResponse getToken(String code) {
-        return keycloakClient.getToken(new AuthTokenRequest(code,
-                                                                 constructRedirectUri(),
-                                                                 client,
-                                                                 AUTHORIZATION_CODE,
-                                                                 secret));
+    public UserInfoResponse getUserInfo(String code) {
+        var request = new AuthTokenRequest(code, constructRedirectUri(),
+                                           client, AUTHORIZATION_CODE, secret);
+
+        var accessToken = keycloakClient.getToken(request)
+                                        .getAccess_token();
+
+        return keycloakClient.getUserInfo(accessToken);
     }
 
     private String constructRedirectUri() {

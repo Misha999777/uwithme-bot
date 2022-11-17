@@ -58,7 +58,7 @@ public class AuthUtility {
 
     public UserInfoResponse getUserInfo(String code) {
         var request = new AuthTokenRequest(code, constructRedirectUri(),
-                                           client, AUTHORIZATION_CODE, secret);
+                                           AUTHORIZATION_CODE, client, secret);
 
         var accessToken = keycloakClient.getToken(request)
                                         .getAccess_token();

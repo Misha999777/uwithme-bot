@@ -119,10 +119,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             deleteLoginMessages(chatId);
             sendMessageWithText(chatId, WELCOME_MESSAGE + " " + educationAppUser.getFirstName());
             sendMenu(chatId);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
             deleteLoginMessages(chatId);
             sendMessageWithText(chatId, FAIL_MESSAGE);
             sendWelcome(chatId);
+
+            log.warn("Can't login:", e);
         }
     }
 

@@ -1,7 +1,5 @@
 package education.uwithme.bot.endpoint;
 
-import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
-
 import java.util.Map;
 
 import education.uwithme.bot.util.AuthUtility;

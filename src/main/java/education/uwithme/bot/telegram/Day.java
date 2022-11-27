@@ -8,12 +8,12 @@ import org.springframework.data.util.Pair;
 @AllArgsConstructor
 public enum Day {
 
-    MONDAY(Pair.of("Понедельник", "/Day 1")),
-    TUESDAY(Pair.of("Вторник", "/Day 2")),
-    WEDNESDAY(Pair.of("Среда", "/Day 3")),
-    THURSDAY(Pair.of("Четверг", "/Day 4")),
-    FRIDAY(Pair.of("Пятница", "/Day 5")),
-    SATURDAY(Pair.of("Суббота", "/Day 6"));
+    MONDAY(Pair.of("Понеділок", "/Day 1")),
+    TUESDAY(Pair.of("Вівторок", "/Day 2")),
+    WEDNESDAY(Pair.of("Середа", "/Day 3")),
+    THURSDAY(Pair.of("Четвер", "/Day 4")),
+    FRIDAY(Pair.of("Пʼятниця", "/Day 5")),
+    SATURDAY(Pair.of("Субота", "/Day 6"));
 
     private final Pair<String, String> message;
 }

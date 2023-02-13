@@ -1,13 +1,13 @@
 package education.uwithme.bot.client.config;
 
-import static org.springframework.cloud.openfeign.security.OAuth2FeignRequestInterceptor.BEARER;
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
-
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.token.TokenManager;
 import org.springframework.context.annotation.Bean;
+
+import static org.springframework.cloud.openfeign.security.OAuth2AccessTokenInterceptor.BEARER;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 public class OauthClientConfig {
 

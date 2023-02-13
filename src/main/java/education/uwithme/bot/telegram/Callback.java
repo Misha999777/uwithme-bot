@@ -1,10 +1,10 @@
 package education.uwithme.bot.telegram;
 
-import java.util.Arrays;
-import java.util.Optional;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+
+import java.util.Arrays;
+import java.util.Optional;
 
 @Getter
 @AllArgsConstructor
@@ -20,7 +20,7 @@ public enum Callback {
 
     public static Optional<Callback> fromCallbackText(String callback) {
         return Arrays.stream(Callback.values())
-                     .filter(value -> value.getMessage().equals(callback))
-                     .findFirst();
+                .filter(value -> value.getMessage().equals(callback))
+                .findFirst();
     }
 }

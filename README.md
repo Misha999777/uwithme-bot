@@ -4,7 +4,8 @@
 
 Service that runs University With Me Bot. Uses [Spring Boot](http://projects.spring.io/spring-boot/).
 
-University With Me Bot is a system for everyone to access data from the [University With Me](https://uwithme.education) via Telegram Bot.
+University With Me Bot is a system for everyone to access data from the [University With Me](https://uwithme.education)
+via Telegram Bot.
 
 ## Requirements
 
@@ -16,6 +17,7 @@ To run this project you should firstly run:
 ## Running the application locally
 
 You can run this application by:
+
 ```shell
 mvn spring-boot:run
 ```
@@ -25,4 +27,5 @@ and speak to [@UniversityWithMe_bot](https://t.me/UniversityWithMe_bot)
 
 ## Copyright
 
-Released under the Apache License 2.0. See the [LICENSE](https://github.com/Misha999777/U-With-Me-Bot/blob/master/LICENSE) file.
+Released under the Apache License 2.0.
+See the [LICENSE](https://github.com/Misha999777/U-With-Me-Bot/blob/master/LICENSE) file.

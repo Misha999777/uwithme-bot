@@ -1,11 +1,11 @@
 package education.uwithme.bot.telegram;
 
-import java.util.Arrays;
-import java.util.Optional;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.data.util.Pair;
+
+import java.util.Arrays;
+import java.util.Optional;
 
 @Getter
 @AllArgsConstructor
@@ -22,7 +22,7 @@ public enum Command {
 
     public static Optional<Command> fromMessage(String message) {
         return Arrays.stream(Command.values())
-                     .filter(value -> value.getMessage().getSecond().equals(message))
-                     .findFirst();
+                .filter(value -> value.getMessage().getSecond().equals(message))
+                .findFirst();
     }
 }

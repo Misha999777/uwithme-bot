@@ -14,14 +14,14 @@ public class TokenManagerConfig {
                              @Value("${keycloak.client.secret}") String clientSecret,
                              @Value("${keycloak.realm}") String realm,
                              @Value("${keycloak.auth-server-url}") String serverUrl) {
-        return KeycloakBuilder.builder()
-                              .serverUrl(serverUrl)
-                              .realm(realm)
-                              .clientId(clientId)
-                              .clientSecret(clientSecret)
-                              .scope("openid")
-                              .grantType("client_credentials")
-                              .build();
-    }
 
+        return KeycloakBuilder.builder()
+                .serverUrl(serverUrl)
+                .realm(realm)
+                .clientId(clientId)
+                .clientSecret(clientSecret)
+                .scope("openid")
+                .grantType("client_credentials")
+                .build();
+    }
 }

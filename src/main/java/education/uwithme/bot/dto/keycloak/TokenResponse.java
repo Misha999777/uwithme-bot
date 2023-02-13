@@ -1,5 +1,6 @@
 package education.uwithme.bot.dto.keycloak;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,5 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TokenResponse {
 
-    private String access_token;
+    @JsonProperty("access_token")
+    private String accessToken;
 }

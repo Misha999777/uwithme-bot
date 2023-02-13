@@ -1,16 +1,16 @@
 package education.uwithme.bot.dto.educationapp;
 
-import java.util.Date;
-
+import education.uwithme.bot.telegram.Callback;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import education.uwithme.bot.telegram.Callback;
+
+import java.util.Date;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FileApi implements BotData {
+public class File implements BotData {
 
     private Long fileId;
     private String fileName;

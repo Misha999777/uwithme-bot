@@ -1,28 +1,24 @@
 package education.uwithme.bot.dto.educationapp;
 
+import education.uwithme.bot.telegram.Callback;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import education.uwithme.bot.telegram.Callback;
+
+import java.util.Objects;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserApi implements BotData {
+public class User implements BotData {
 
     private String id;
     private String firstName;
-    private String lastName;
     private String surname;
     private String phone;
     private String email;
     private Role role;
-    private String studyGroupName;
     private Long studyGroupId;
-    private String instituteName;
-    private String departmentName;
-    private Long universityId;
-    private Boolean isAdmin;
 
     @Override
     public String getCallbackName() {
@@ -36,6 +32,8 @@ public class UserApi implements BotData {
 
     @Override
     public String getData() {
-        return this.email;
+        return Objects.nonNull(this.phone)
+                ? this.email + System.lineSeparator() + this.phone
+                : this.email;
     }
 }

@@ -1,20 +1,20 @@
 package education.uwithme.bot.util;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
-import static org.springframework.cloud.openfeign.security.OAuth2FeignRequestInterceptor.BEARER;
-
-import java.net.URLEncoder;
-import java.util.StringJoiner;
-
 import education.uwithme.bot.client.KeycloakClient;
-import education.uwithme.bot.dto.keycloak.AuthTokenRequest;
 import education.uwithme.bot.dto.keycloak.UserInfoResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
+
+import java.net.URLEncoder;
+import java.util.Map;
+import java.util.StringJoiner;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
+import static org.springframework.cloud.openfeign.security.OAuth2AccessTokenInterceptor.BEARER;
 
 @Component
 @RequiredArgsConstructor
@@ -29,6 +29,9 @@ public class AuthUtility {
     private static final String OPENID = "openid";
     private static final String TOKEN = "token";
 
+    @NonNull
+    private final KeycloakClient keycloakClient;
+
     @Value("${education-app.bot.uri}")
     private String redirectUri;
     @Value("${keycloak.auth-server-url}/realms/${keycloak.realm}/protocol/openid-connect/auth")
@@ -37,9 +40,6 @@ public class AuthUtility {
     private String client;
     @Value("${keycloak.client.secret}")
     private String secret;
-
-    @NonNull
-    private final KeycloakClient keycloakClient;
 
     public String constructLoginUri() {
         var params = new StringJoiner("&", "?", "")
@@ -57,11 +57,14 @@ public class AuthUtility {
     }
 
     public UserInfoResponse getUserInfo(String code) {
-        var request = new AuthTokenRequest(code, constructRedirectUri(),
-                                           AUTHORIZATION_CODE, client, secret);
+        var request = Map.of("grant_type", AUTHORIZATION_CODE,
+                "client_id", client,
+                "client_secret", secret,
+                "redirect_uri", constructRedirectUri(),
+                "code", code);
 
         var accessToken = keycloakClient.getToken(request)
-                                        .getAccess_token();
+                .getAccessToken();
 
         var headerValue = String.format("%s %s", BEARER, accessToken);
 
@@ -74,6 +77,6 @@ public class AuthUtility {
 
     private String constructParam(String name, String value) {
         return name.concat("=")
-                   .concat(value);
+                .concat(value);
     }
 }

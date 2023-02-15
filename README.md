@@ -1,6 +1,6 @@
 # University With Me Bot
 
-[![License](http://img.shields.io/:license-apache-blue.svg)](https://github.com/Misha999777/U-With-Me-Bot/blob/master/LICENSE)
+[![License](https://img.shields.io/:license-GPL-blue.svg)](https://github.com/Misha999777/U-With-Me-Bot/blob/master/LICENSE)
 
 Service that runs University With Me Bot. Uses [Spring Boot](http://projects.spring.io/spring-boot/).
 
@@ -27,5 +27,5 @@ and speak to [@UniversityWithMe_bot](https://t.me/UniversityWithMe_bot)
 
 ## Copyright
 
-Released under the Apache License 2.0.
+Released under the GNU General Public License v2.0.
 See the [LICENSE](https://github.com/Misha999777/U-With-Me-Bot/blob/master/LICENSE) file.

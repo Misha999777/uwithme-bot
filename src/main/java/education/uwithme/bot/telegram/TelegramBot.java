@@ -1,5 +1,7 @@
 package education.uwithme.bot.telegram;
 
+import com.mborodin.uwm.api.LessonApi;
+import com.mborodin.uwm.api.enums.FileType;
 import education.uwithme.bot.client.EducationAppClient;
 import education.uwithme.bot.dto.educationapp.BotData;
 import education.uwithme.bot.dto.educationapp.Lesson;
@@ -118,9 +120,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             User educationAppUser = studentsClient.getUser(userInfo.getSub());
             Objects.requireNonNull(educationAppUser);
-            Objects.requireNonNull(educationAppUser.getStudyGroupId());
+            Objects.requireNonNull(educationAppUser.getGroup());
 
-            botUser.setGroupId(educationAppUser.getStudyGroupId());
+            botUser.setGroupId(educationAppUser.getGroup().getId());
             botUserRepository.save(botUser);
 
             deleteLoginMessages(chatId);
@@ -186,13 +188,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             case LECTURES:
                 sendList(chatId, studentsClient.getFiles(getUserGroup(chatId))
                         .stream()
-                        .filter(fileApi -> fileApi.getType() == 1)
+                        .filter(fileApi -> fileApi.getFileType() == FileType.LECTURE)
                         .collect(Collectors.toList()));
                 break;
             case TASKS:
                 sendList(chatId, studentsClient.getFiles(getUserGroup(chatId))
                         .stream()
-                        .filter(fileApi -> fileApi.getType() == 0)
+                        .filter(fileApi -> fileApi.getFileType() == FileType.TASK)
                         .collect(Collectors.toList()));
                 break;
             case EXIT:
@@ -218,7 +220,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                         .stream()
                         .filter(lesson -> Objects.equals(lesson.getWeekDay(), Long.parseLong(id)))
                         .filter(lesson -> Objects.equals(lesson.getWeekNumber(), getWeek()))
-                        .sorted(Comparator.comparingLong(Lesson::getLessonTime))
+                        .sorted(Comparator.comparingLong(LessonApi::getLessonTime))
                         .map(Lesson::getData)
                         .collect(Collectors.joining(System.lineSeparator())));
                 break;
@@ -361,7 +363,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<List<InlineKeyboardButton>> keyboard = collection.stream()
                         .map(element -> InlineKeyboardButton.builder()
                                 .text(element.getDisplayName())
-                                .callbackData(element.getCallbackName() + " " + element.getId())
+                                .callbackData(element.getCallbackName() + " " + element.getDataId())
                                 .build())
                         .map(List::of)
                         .collect(Collectors.toList());
@@ -392,7 +394,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             return this.execute(method).getMessageId();
         } catch (TelegramApiException e) {
-            log.error("Cant send message {}. Exception: {}", method, e);
+            log.error("Cant send message {}", method, e);
             return null;
         }
     }
@@ -401,7 +403,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             this.execute(method);
         } catch (TelegramApiException e) {
-            log.error("Cant answer callback {}. Exception: {}", method, e);
+            log.error("Cant answer callback {}", method, e);
         }
     }
 
@@ -409,7 +411,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             this.execute(method);
         } catch (TelegramApiException e) {
-            log.error("Cant delete message {}. Exception: {}", method, e);
+            log.error("Cant delete message {}", method, e);
         }
     }
 
@@ -417,7 +419,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             this.execute(method);
         } catch (TelegramApiException e) {
-            log.error("Cant send document {}. Exception: {}", method, e);
+            log.error("Cant send document {}", method, e);
         }
     }
 

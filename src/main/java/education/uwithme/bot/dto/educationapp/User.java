@@ -1,39 +1,34 @@
 package education.uwithme.bot.dto.educationapp;
 
+import com.mborodin.uwm.api.UserApi;
+import com.mborodin.uwm.api.enums.Role;
 import education.uwithme.bot.telegram.Callback;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class User implements BotData {
-
-    private String id;
-    private String firstName;
-    private String surname;
-    private String phone;
-    private String email;
-    private Role role;
-    private Long studyGroupId;
+public class User extends UserApi implements BotData {
 
     @Override
     public String getCallbackName() {
-        return this.role.equals(Role.ROLE_TEACHER) ? Callback.TEACHER.getMessage() : Callback.STUDENT.getMessage();
+        return getRoles().contains(Role.ROLE_TEACHER)
+                ? Callback.TEACHER.getMessage()
+                : Callback.STUDENT.getMessage();
+    }
+
+    @Override
+    public String getDataId() {
+        return getId();
     }
 
     @Override
     public String getDisplayName() {
-        return this.firstName + " " + this.surname;
+        return getFirstName() + " " + getSurname();
     }
 
     @Override
     public String getData() {
-        return Objects.nonNull(this.phone)
-                ? this.email + System.lineSeparator() + this.phone
-                : this.email;
+        return Objects.nonNull(getPhone())
+                ? getEmail() + System.lineSeparator() + getPhone()
+                : getEmail();
     }
 }

@@ -84,6 +84,11 @@
             <groupId>org.keycloak</groupId>
             <version>${keycloak.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.mborodin.uwm</groupId>
+            <artifactId>uwithme-api</artifactId>
+            <version>1.0.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>

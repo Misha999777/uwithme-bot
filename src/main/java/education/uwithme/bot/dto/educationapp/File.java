@@ -1,40 +1,30 @@
 package education.uwithme.bot.dto.educationapp;
 
+import com.mborodin.uwm.api.FileApi;
+import com.mborodin.uwm.api.enums.FileType;
 import education.uwithme.bot.telegram.Callback;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.util.Date;
-
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class File implements BotData {
-
-    private Long fileId;
-    private String fileName;
-    private Integer type;
-    private Long subjectId;
-    private Date timeStartAccess;
+public class File extends FileApi implements BotData {
 
     @Override
     public String getCallbackName() {
-        return type == 1 ? Callback.LECTURE.getMessage() : Callback.TASK.getMessage();
+        return getFileType() == FileType.LECTURE
+                ? Callback.LECTURE.getMessage()
+                : Callback.TASK.getMessage();
+    }
+
+    @Override
+    public String getDataId() {
+        return String.valueOf(getFileId());
     }
 
     @Override
     public String getDisplayName() {
-        return this.fileName;
+        return getFileName();
     }
 
     @Override
     public String getData() {
-        return fileId.toString();
-    }
-
-    @Override
-    public String getId() {
-        return fileId.toString();
+        return String.valueOf(getFileId());
     }
 }

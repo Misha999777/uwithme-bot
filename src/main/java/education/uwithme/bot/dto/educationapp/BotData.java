@@ -2,11 +2,11 @@ package education.uwithme.bot.dto.educationapp;
 
 public interface BotData {
 
-    String getCallbackName();
+    String getDataId();
 
     String getDisplayName();
 
     String getData();
 
-    String getId();
+    String getCallbackName();
 }

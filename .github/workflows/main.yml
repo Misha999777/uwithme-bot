@@ -1,0 +1,39 @@
+name: Main
+
+on:
+  push:
+    branches: [ master ]
+
+permissions:
+  packages: write
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4.5
+        with:
+          maven-version: 3.8.2
+      - name: Configure Maven
+        uses: s4u/maven-settings-action@v2.8.0
+      - name: Package with Mavwn
+        run: mvn package --no-transfer-progress
+      - name: Build and Publish latest Docker image
+        uses: VaultVulp/gp-docker-action@1.6.0
+        with:
+          dockerfile: ./image/Dockerfile
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          image-name: uwithme-bot
+          image-tag: latest
+          custom-args: --platform=linux/arm64,linux/amd64

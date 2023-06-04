@@ -30,6 +30,13 @@
         <relativePath/>
     </parent>
 
+    <repositories>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/HappyMary16/uwithme-server</url>
+        </repository>
+    </repositories>
+
     <dependencyManagement>
         <dependencies>
             <dependency>

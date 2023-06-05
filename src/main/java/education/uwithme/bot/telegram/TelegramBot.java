@@ -1,13 +1,16 @@
 package education.uwithme.bot.telegram;
 
 import com.mborodin.uwm.api.LessonApi;
+import com.mborodin.uwm.api.UserApi;
 import com.mborodin.uwm.api.enums.FileType;
+import com.mborodin.uwm.api.structure.GroupApi;
 import education.uwithme.bot.client.EducationAppClient;
 import education.uwithme.bot.dto.BotData;
 import education.uwithme.bot.dto.Lesson;
 import education.uwithme.bot.dto.User;
 import education.uwithme.bot.entity.BotUser;
 import education.uwithme.bot.repository.BotUserRepository;
+import feign.FeignException;
 import feign.Response.Body;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -99,7 +102,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             Objects.requireNonNull(educationAppUser);
             Objects.requireNonNull(educationAppUser.getGroup());
 
-            botUser.setGroupId(educationAppUser.getGroup().getId());
+            botUser.setUserId(uwmUserId);
             botUserRepository.save(botUser);
 
             deleteLoginMessages(chatId);
@@ -115,9 +118,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void processCallback(long chatId, CallbackQuery query) {
-        Long groupId = botUserRepository.findById(chatId)
-                .map(BotUser::getGroupId)
-                .orElse(null);
+        Long groupId = getUserGroup(chatId);
         if (Objects.isNull(groupId)) {
             sendWelcome(chatId);
             return;
@@ -195,9 +196,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendWelcome(Long chatId) {
-        Long groupId = botUserRepository.findById(chatId)
-                .map(BotUser::getGroupId)
-                .orElse(null);
+        Long groupId = getUserGroup(chatId);
 
         if (Objects.isNull(groupId)) {
             InlineKeyboardButton button = InlineKeyboardButton.builder()
@@ -335,9 +334,20 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private Long getUserGroup(Long chatId) {
-        return botUserRepository.findById(chatId)
-                .orElseThrow()
-                .getGroupId();
+        Optional<String> userId = botUserRepository.findById(chatId)
+                .map(BotUser::getUserId);
+        if (userId.isEmpty()) {
+            return null;
+        }
+
+        try {
+            return Optional.of(studentsClient.getUser(userId.get()))
+                    .map(UserApi::getGroup)
+                    .map(GroupApi::getId)
+                    .orElse(null);
+        } catch (FeignException.NotFound ignored) {
+            return null;
+        }
     }
 
     private Long getWeek() {

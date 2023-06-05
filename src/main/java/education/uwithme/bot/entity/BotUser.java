@@ -20,7 +20,7 @@ public class BotUser implements Serializable {
 
     @Id
     private Long chatId;
-    private Long groupId;
+    private String userId;
     @ElementCollection(fetch = FetchType.EAGER)
     private List<Integer> loginMessageIds = new ArrayList<>();
 }

@@ -1,5 +1,7 @@
 package education.uwithme.bot.config;
 
+import org.keycloak.adapters.KeycloakConfigResolver;
+import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,13 +9,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TokenManagerConfig {
+public class KeycloakConfig {
 
     @Bean
-    public Keycloak keycloak(@Value("${keycloak.client.id}") String clientId,
-                             @Value("${keycloak.client.secret}") String clientSecret,
+    public KeycloakConfigResolver KeycloakConfigResolver() {
+        return new KeycloakSpringBootConfigResolver();
+    }
+
+    @Bean
+    public Keycloak keycloak(@Value("${keycloak.auth-server-url}") String serverUrl,
                              @Value("${keycloak.realm}") String realm,
-                             @Value("${keycloak.auth-server-url}") String serverUrl) {
+                             @Value("${keycloak.resource}") String clientId,
+                             @Value("${keycloak.credentials.secret}") String clientSecret) {
 
         return KeycloakBuilder.builder()
                 .serverUrl(serverUrl)

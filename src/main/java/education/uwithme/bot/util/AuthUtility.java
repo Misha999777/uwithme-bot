@@ -1,82 +1,52 @@
 package education.uwithme.bot.util;
 
-import education.uwithme.bot.client.KeycloakClient;
-import education.uwithme.bot.dto.keycloak.UserInfoResponse;
-import lombok.NonNull;
+import com.mborodin.uwm.api.bot.TelegramUserData;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.ui.Model;
 
-import java.net.URLEncoder;
-import java.util.Map;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 import java.util.StringJoiner;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
-import static org.springframework.cloud.openfeign.security.OAuth2AccessTokenInterceptor.BEARER;
 
 @Component
 @RequiredArgsConstructor
 public class AuthUtility {
 
-    private static final String TOKEN_PATH = "/token";
-    private static final String CLIENT_ID = "client_id";
-    private static final String REDIRECT_URI = "redirect_uri";
-    private static final String RESPONSE_TYPE = "response_type";
-    private static final String CODE = "code";
-    private static final String SCOPE = "scope";
-    private static final String OPENID = "openid";
-    private static final String TOKEN = "token";
+    public static final String HMAC_SHA_256 = "HmacSHA256";
+    public static final String SHA_256 = "SHA-256";
 
-    @NonNull
-    private final KeycloakClient keycloakClient;
+    @Value("${bot.key}")
+    private String botKey;
 
-    @Value("${education-app.bot.uri}")
-    private String redirectUri;
-    @Value("${keycloak.auth-server-url}/realms/${keycloak.realm}/protocol/openid-connect/auth")
-    private String authUri;
-    @Value("${keycloak.client.id}")
-    private String client;
-    @Value("${keycloak.client.secret}")
-    private String secret;
-
-    public String constructLoginUri() {
-        var params = new StringJoiner("&", "?", "")
-                .add(constructParam(CLIENT_ID, client))
-                .add(constructParam(REDIRECT_URI, URLEncoder.encode(constructRedirectUri(), UTF_8)))
-                .add(constructParam(RESPONSE_TYPE, CODE))
-                .add(constructParam(SCOPE, OPENID))
+    @SneakyThrows
+    public void checkTelegramData(TelegramUserData telegramUserData) {
+        String data = new StringJoiner("\n")
+                .add("auth_date=" + telegramUserData.getAuthDate())
+                .add("first_name=" + telegramUserData.getFirstName())
+                .add("id=" + telegramUserData.getId())
+                .add("last_name=" + telegramUserData.getLastName())
+                .add("photo_url=" + telegramUserData.getPhotoUrl())
+                .add("username=" + telegramUserData.getUsername())
                 .toString();
 
-        return authUri.concat(params);
-    }
+        String hash = telegramUserData.getHash();
+        byte[] key = MessageDigest.getInstance(SHA_256)
+                .digest(botKey.getBytes(StandardCharsets.UTF_8));
 
-    public void constructModel(Model model, String accessToken) {
-        model.addAttribute(TOKEN, accessToken);
-    }
+        Mac mac = Mac.getInstance(HMAC_SHA_256);
+        mac.init(new SecretKeySpec(key, HMAC_SHA_256));
 
-    public UserInfoResponse getUserInfo(String code) {
-        var request = Map.of("grant_type", AUTHORIZATION_CODE,
-                "client_id", client,
-                "client_secret", secret,
-                "redirect_uri", constructRedirectUri(),
-                "code", code);
+        var result = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+        String resultHash = HexFormat.of()
+                .formatHex(result);
 
-        var accessToken = keycloakClient.getToken(request)
-                .getAccessToken();
-
-        var headerValue = String.format("%s %s", BEARER, accessToken);
-
-        return keycloakClient.getUserInfo(headerValue);
-    }
-
-    private String constructRedirectUri() {
-        return redirectUri.concat(TOKEN_PATH);
-    }
-
-    private String constructParam(String name, String value) {
-        return name.concat("=")
-                .concat(value);
+        if (hash.compareToIgnoreCase(resultHash) != 0) {
+            throw new RuntimeException();
+        }
     }
 }

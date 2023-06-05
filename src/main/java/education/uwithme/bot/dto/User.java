@@ -1,4 +1,4 @@
-package education.uwithme.bot.dto.educationapp;
+package education.uwithme.bot.dto;
 
 import com.mborodin.uwm.api.UserApi;
 import com.mborodin.uwm.api.enums.Role;

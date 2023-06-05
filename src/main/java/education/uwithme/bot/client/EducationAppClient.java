@@ -1,9 +1,9 @@
 package education.uwithme.bot.client;
 
-import education.uwithme.bot.client.config.OauthClientConfig;
-import education.uwithme.bot.dto.educationapp.File;
-import education.uwithme.bot.dto.educationapp.Lesson;
-import education.uwithme.bot.dto.educationapp.User;
+import education.uwithme.bot.config.OauthClientConfig;
+import education.uwithme.bot.dto.File;
+import education.uwithme.bot.dto.Lesson;
+import education.uwithme.bot.dto.User;
 import feign.Response;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PathVariable;

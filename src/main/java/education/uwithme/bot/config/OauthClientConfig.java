@@ -1,4 +1,4 @@
-package education.uwithme.bot.client.config;
+package education.uwithme.bot.config;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;

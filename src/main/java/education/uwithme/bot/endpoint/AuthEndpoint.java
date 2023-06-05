@@ -1,24 +1,26 @@
 package education.uwithme.bot.endpoint;
 
+import com.mborodin.uwm.api.bot.TelegramUserData;
+import education.uwithme.bot.telegram.TelegramBot;
 import education.uwithme.bot.util.AuthUtility;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
-@Controller
+@RestController
+@RequestMapping("/uwm-bot")
 @RequiredArgsConstructor
 public class AuthEndpoint {
 
     private final AuthUtility authUtility;
+    private final TelegramBot telegramBot;
 
-    @GetMapping("/token")
-    public String token(Model model, @RequestParam Map<String, String> request) {
-        var code = request.get("code");
-        authUtility.constructModel(model, code);
-        return "login.html";
+    @PostMapping("/auth")
+    @Secured("ROLE_SERVICE")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void token(@RequestBody TelegramUserData telegramUserData) {
+        authUtility.checkTelegramData(telegramUserData);
+        telegramBot.onLoginComplete(Long.parseLong(telegramUserData.getId()), telegramUserData.getUwmUserId());
     }
 }

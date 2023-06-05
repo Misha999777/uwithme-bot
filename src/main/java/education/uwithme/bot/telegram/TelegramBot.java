@@ -3,13 +3,11 @@ package education.uwithme.bot.telegram;
 import com.mborodin.uwm.api.LessonApi;
 import com.mborodin.uwm.api.enums.FileType;
 import education.uwithme.bot.client.EducationAppClient;
-import education.uwithme.bot.dto.educationapp.BotData;
-import education.uwithme.bot.dto.educationapp.Lesson;
-import education.uwithme.bot.dto.educationapp.User;
-import education.uwithme.bot.dto.keycloak.UserInfoResponse;
+import education.uwithme.bot.dto.BotData;
+import education.uwithme.bot.dto.Lesson;
+import education.uwithme.bot.dto.User;
 import education.uwithme.bot.entity.BotUser;
 import education.uwithme.bot.repository.BotUserRepository;
-import education.uwithme.bot.util.AuthUtility;
 import feign.Response.Body;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -24,17 +22,9 @@ import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.*;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
-import org.telegram.telegrambots.meta.api.objects.webapp.WebAppData;
-import org.telegram.telegrambots.meta.api.objects.webapp.WebAppInfo;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import javax.annotation.PostConstruct;
@@ -42,14 +32,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -70,14 +53,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     @NonNull
     private final BotUserRepository botUserRepository;
     @NonNull
-    private final AuthUtility authUtility;
-    @NonNull
     private final EducationAppClient studentsClient;
 
     @Value("${bot.key}")
     private String key;
     @Value("${bot.name}")
     private String name;
+    @Value("${education-app.ui.uri}")
+    private String uiUri;
     @Value("${bot.firstWeekStart:#{null}}")
     private String firstWeekStart;
 
@@ -103,22 +86,16 @@ public class TelegramBot extends TelegramLongPollingBot {
                 .ifPresent(callbackQuery -> processCallback(getChatId(update), callbackQuery));
 
         Optional.ofNullable(update.getMessage())
-                .filter(message -> Objects.nonNull(message.getWebAppData()))
-                .ifPresent(message -> onLoginComplete(getChatId(update), message.getWebAppData()));
-
-        Optional.ofNullable(update.getMessage())
                 .filter(message -> Objects.equals(message.getText(), "/start"))
                 .map(Message::getChatId)
                 .ifPresent(this::sendWelcome);
     }
 
-    public void onLoginComplete(Long chatId, WebAppData webAppData) {
-        UserInfoResponse userInfo = authUtility.getUserInfo(webAppData.getData());
-
+    public void onLoginComplete(Long chatId, String uwmUserId) {
         BotUser botUser = botUserRepository.findById(chatId).orElseThrow();
 
         try {
-            User educationAppUser = studentsClient.getUser(userInfo.getSub());
+            User educationAppUser = studentsClient.getUser(uwmUserId);
             Objects.requireNonNull(educationAppUser);
             Objects.requireNonNull(educationAppUser.getGroup());
 
@@ -171,64 +148,49 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void processCommand(Long chatId, Command payload) {
         switch (payload) {
-            case TIMETABLE:
+            case TIMETABLE -> {
                 Map<String, String> days = Arrays.stream(Day.values())
                         .map(Day::getMessage)
                         .collect(LinkedHashMap::new, (map, item) -> map.put(item.getFirst(), item.getSecond()),
                                 Map::putAll);
-
                 sendMap(chatId, days);
-                break;
-            case STUDENTS:
-                sendList(chatId, studentsClient.getStudents(getUserGroup(chatId)));
-                break;
-            case TEACHERS:
-                sendList(chatId, studentsClient.getTeachers(getUserGroup(chatId)));
-                break;
-            case LECTURES:
-                sendList(chatId, studentsClient.getFiles(getUserGroup(chatId))
-                        .stream()
-                        .filter(fileApi -> fileApi.getFileType() == FileType.LECTURE)
-                        .collect(Collectors.toList()));
-                break;
-            case TASKS:
-                sendList(chatId, studentsClient.getFiles(getUserGroup(chatId))
-                        .stream()
-                        .filter(fileApi -> fileApi.getFileType() == FileType.TASK)
-                        .collect(Collectors.toList()));
-                break;
-            case EXIT:
+            }
+            case STUDENTS -> sendList(chatId, studentsClient.getStudents(getUserGroup(chatId)));
+            case TEACHERS -> sendList(chatId, studentsClient.getTeachers(getUserGroup(chatId)));
+            case LECTURES -> sendList(chatId, studentsClient.getFiles(getUserGroup(chatId))
+                    .stream()
+                    .filter(fileApi -> fileApi.getFileType() == FileType.LECTURE)
+                    .collect(Collectors.toList()));
+            case TASKS -> sendList(chatId, studentsClient.getFiles(getUserGroup(chatId))
+                    .stream()
+                    .filter(fileApi -> fileApi.getFileType() == FileType.TASK)
+                    .collect(Collectors.toList()));
+            case EXIT -> {
                 Optional<BotUser> botUser = botUserRepository.findById(chatId);
-
                 if (botUser.isPresent()) {
                     botUserRepository.deleteById(chatId);
                 }
-
                 sendWelcome(chatId);
+            }
         }
     }
 
     @SneakyThrows
     private void processDetail(long chatId, String id, Callback callback) {
         switch (callback) {
-            case STUDENT:
-            case TEACHER:
-                sendMessageWithText(chatId, studentsClient.getUser(id).getData());
-                break;
-            case DAY:
-                sendMessageWithText(chatId, studentsClient.getLessons(getUserGroup(chatId))
-                        .stream()
-                        .filter(lesson -> Objects.equals(lesson.getWeekDay(), Long.parseLong(id)))
-                        .filter(lesson -> Objects.equals(lesson.getWeekNumber(), getWeek()))
-                        .sorted(Comparator.comparingLong(LessonApi::getLessonTime))
-                        .map(Lesson::getData)
-                        .collect(Collectors.joining(System.lineSeparator())));
-                break;
-            case LECTURE:
-            case TASK:
+            case STUDENT, TEACHER -> sendMessageWithText(chatId, studentsClient.getUser(id).getData());
+            case DAY -> sendMessageWithText(chatId, studentsClient.getLessons(getUserGroup(chatId))
+                    .stream()
+                    .filter(lesson -> Objects.equals(lesson.getWeekDay(), Long.parseLong(id)))
+                    .filter(lesson -> Objects.equals(lesson.getWeekNumber(), getWeek()))
+                    .sorted(Comparator.comparingLong(LessonApi::getLessonTime))
+                    .map(Lesson::getData)
+                    .collect(Collectors.joining(System.lineSeparator())));
+            case LECTURE, TASK -> {
                 try (Body body = studentsClient.getFile(Long.parseLong(id)).body()) {
                     sendFile(chatId, new InputFile(body.asInputStream(), id));
                 }
+            }
         }
     }
 
@@ -238,16 +200,15 @@ public class TelegramBot extends TelegramLongPollingBot {
                 .orElse(null);
 
         if (Objects.isNull(groupId)) {
-            KeyboardButton keyButton = KeyboardButton.builder()
+            InlineKeyboardButton button = InlineKeyboardButton.builder()
                     .text(AUTHORIZE_BUTTON_NAME)
-                    .webApp(WebAppInfo.builder()
-                            .url(authUtility.constructLoginUri())
+                    .loginUrl(LoginUrl.builder()
+                            .url(uiUri)
                             .build())
                     .build();
-            List<KeyboardRow> keyboard = List.of(new KeyboardRow(List.of(keyButton)));
-            ReplyKeyboardMarkup markup = ReplyKeyboardMarkup.builder()
+            List<List<InlineKeyboardButton>> keyboard = List.of(List.of(button));
+            InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder()
                     .keyboard(keyboard)
-                    .resizeKeyboard(true)
                     .build();
 
             SendMessage message = SendMessage.builder()

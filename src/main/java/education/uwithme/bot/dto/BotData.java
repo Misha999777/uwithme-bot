@@ -1,4 +1,4 @@
-package education.uwithme.bot.dto.educationapp;
+package education.uwithme.bot.dto;
 
 public interface BotData {
 

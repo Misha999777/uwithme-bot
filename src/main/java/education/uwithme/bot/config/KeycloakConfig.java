@@ -1,7 +1,5 @@
 package education.uwithme.bot.config;
 
-import org.keycloak.adapters.KeycloakConfigResolver;
-import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,11 +8,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class KeycloakConfig {
-
-    @Bean
-    public KeycloakConfigResolver KeycloakConfigResolver() {
-        return new KeycloakSpringBootConfigResolver();
-    }
 
     @Bean
     public Keycloak keycloak(@Value("${keycloak.auth-server-url}") String serverUrl,

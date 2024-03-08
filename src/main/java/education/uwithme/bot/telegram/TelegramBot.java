@@ -12,6 +12,7 @@ import education.uwithme.bot.entity.BotUser;
 import education.uwithme.bot.repository.BotUserRepository;
 import feign.FeignException;
 import feign.Response.Body;
+import jakarta.annotation.PostConstruct;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -30,7 +31,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import javax.annotation.PostConstruct;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneId;
@@ -395,9 +395,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private Long getChatId(Update update) {
-        Message message = Optional.ofNullable(update.getMessage())
-                .orElseGet((() -> update.getCallbackQuery().getMessage()));
+        if (update.hasMessage()) {
+            return update.getMessage().getChatId();
+        }
 
-        return message.getChatId();
+        if (update.hasCallbackQuery()) {
+            return update.getCallbackQuery().getMessage().getChatId();
+        }
+
+        throw new RuntimeException("Can't get chat id");
     }
 }

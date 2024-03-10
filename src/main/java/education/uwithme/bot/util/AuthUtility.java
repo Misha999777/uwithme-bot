@@ -17,8 +17,9 @@ import java.util.StringJoiner;
 @RequiredArgsConstructor
 public class AuthUtility {
 
-    public static final String HMAC_SHA_256 = "HmacSHA256";
-    public static final String SHA_256 = "SHA-256";
+    private static final String TEST_ENV_SUFFIX = "/test";
+    private static final String HMAC_SHA_256 = "HmacSHA256";
+    private static final String SHA_256 = "SHA-256";
 
     @Value("${bot.key}")
     private String botKey;
@@ -28,8 +29,9 @@ public class AuthUtility {
         String data = buildVerificationString(telegramUserData);
 
         String hash = telegramUserData.getHash();
+        String hashKey = botKey.replace(TEST_ENV_SUFFIX, "");
         byte[] key = MessageDigest.getInstance(SHA_256)
-                .digest(botKey.getBytes(StandardCharsets.UTF_8));
+                .digest(hashKey.getBytes(StandardCharsets.UTF_8));
 
         Mac mac = Mac.getInstance(HMAC_SHA_256);
         mac.init(new SecretKeySpec(key, HMAC_SHA_256));

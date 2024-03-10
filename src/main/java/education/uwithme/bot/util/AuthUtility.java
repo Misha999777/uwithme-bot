@@ -25,14 +25,7 @@ public class AuthUtility {
 
     @SneakyThrows
     public void checkTelegramData(TelegramUserData telegramUserData) {
-        String data = new StringJoiner("\n")
-                .add("auth_date=" + telegramUserData.getAuthDate())
-                .add("first_name=" + telegramUserData.getFirstName())
-                .add("id=" + telegramUserData.getId())
-                .add("last_name=" + telegramUserData.getLastName())
-                .add("photo_url=" + telegramUserData.getPhotoUrl())
-                .add("username=" + telegramUserData.getUsername())
-                .toString();
+        String data = buildVerificationString(telegramUserData);
 
         String hash = telegramUserData.getHash();
         byte[] key = MessageDigest.getInstance(SHA_256)
@@ -46,7 +39,32 @@ public class AuthUtility {
                 .formatHex(result);
 
         if (hash.compareToIgnoreCase(resultHash) != 0) {
-            throw new RuntimeException();
+            throw new RuntimeException("Telegram data integrity verification failed");
         }
+    }
+
+    private String buildVerificationString(TelegramUserData telegramUserData) {
+        StringJoiner joiner = new StringJoiner("\n");
+
+        if (telegramUserData.getAuthDate() != null) {
+            joiner.add("auth_date=" + telegramUserData.getAuthDate());
+        }
+        if (telegramUserData.getFirstName() != null) {
+            joiner.add("first_name=" + telegramUserData.getFirstName());
+        }
+        if (telegramUserData.getId() != null) {
+            joiner.add("id=" + telegramUserData.getId());
+        }
+        if (telegramUserData.getLastName() != null) {
+            joiner.add("last_name=" + telegramUserData.getLastName());
+        }
+        if (telegramUserData.getPhotoUrl() != null) {
+            joiner.add("photo_url=" + telegramUserData.getPhotoUrl());
+        }
+        if (telegramUserData.getUsername() != null) {
+            joiner.add("username=" + telegramUserData.getUsername());
+        }
+
+        return joiner.toString();
     }
 }

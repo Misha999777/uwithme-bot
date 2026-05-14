@@ -17,7 +17,7 @@
         <maven.compiler.target>21</maven.compiler.target>
 
         <lombok.version>1.18.30</lombok.version>
-        <uwithme.version>1.0.4</uwithme.version>
+        <uwithme.version>1.0.5</uwithme.version>
         <telegrambots.version>6.9.7.1</telegrambots.version>
         <postgresql.version>42.7.2</postgresql.version>
         <keycloak.version>24.0.1</keycloak.version>

@@ -1,6 +1,6 @@
 package education.uwithme.bot.util;
 
-import com.mborodin.uwm.api.bot.TelegramUserData;
+import com.mborodin.uwm.api.bot.TelegramData;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,7 +25,7 @@ public class AuthUtility {
     private String botKey;
 
     @SneakyThrows
-    public void checkTelegramData(TelegramUserData telegramUserData) {
+    public void checkTelegramData(TelegramData telegramUserData) {
         String data = buildVerificationString(telegramUserData);
 
         String hash = telegramUserData.getHash();
@@ -45,27 +45,12 @@ public class AuthUtility {
         }
     }
 
-    private String buildVerificationString(TelegramUserData telegramUserData) {
+    private String buildVerificationString(TelegramData telegramUserData) {
         StringJoiner joiner = new StringJoiner("\n");
-
-        if (telegramUserData.getAuthDate() != null) {
-            joiner.add("auth_date=" + telegramUserData.getAuthDate());
-        }
-        if (telegramUserData.getFirstName() != null) {
-            joiner.add("first_name=" + telegramUserData.getFirstName());
-        }
-        if (telegramUserData.getId() != null) {
-            joiner.add("id=" + telegramUserData.getId());
-        }
-        if (telegramUserData.getLastName() != null) {
-            joiner.add("last_name=" + telegramUserData.getLastName());
-        }
-        if (telegramUserData.getPhotoUrl() != null) {
-            joiner.add("photo_url=" + telegramUserData.getPhotoUrl());
-        }
-        if (telegramUserData.getUsername() != null) {
-            joiner.add("username=" + telegramUserData.getUsername());
-        }
+        telegramUserData.entrySet()
+                .stream()
+                .filter(entry -> !entry.getKey().equals("hash"))
+                .forEach(entry -> joiner.add(entry.getKey() + "=" + entry.getValue()));
 
         return joiner.toString();
     }

@@ -1,5 +1,6 @@
 package education.uwithme.bot.endpoint;
 
+import com.mborodin.uwm.api.bot.TelegramData;
 import com.mborodin.uwm.api.bot.TelegramUserData;
 import education.uwithme.bot.telegram.TelegramBot;
 import education.uwithme.bot.util.AuthUtility;
@@ -20,7 +21,8 @@ public class AuthEndpoint {
     @Secured("ROLE_SERVICE")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void token(@RequestBody TelegramUserData telegramUserData) {
-        authUtility.checkTelegramData(telegramUserData);
-        telegramBot.onLoginComplete(Long.parseLong(telegramUserData.getId()), telegramUserData.getUwmUserId());
+        TelegramData telegramData = telegramUserData.getTelegramData();
+        authUtility.checkTelegramData(telegramData);
+        telegramBot.onLoginComplete(Long.parseLong(telegramData.getId()), telegramUserData.getUwmUserId());
     }
 }

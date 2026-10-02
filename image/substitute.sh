@@ -8,4 +8,4 @@ fi
 
 export SCHEMA="${SCHEMA}"
 
-envsubst < application.properties.tmpl > application.properties
+envsubst < application.properties.template > application.properties
